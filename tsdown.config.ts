@@ -1,6 +1,9 @@
 import { defineConfig } from 'tsdown'
 
 export default defineConfig({
-  exports: true,
-  // ...config options
-})
+    exports: true,
+    entry: ['./src/index.ts', './src/bin.ts'],
+    format: ['esm'],
+    dts: true,
+    clean: true,
+});

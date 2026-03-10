@@ -3,3 +3,10 @@ dist
 *.log
 .DS_Store
 .idea
+
+docs/HANDOFF.md
+.yarn/
+
+/.env.local
+/.env.*.local
+/.env
