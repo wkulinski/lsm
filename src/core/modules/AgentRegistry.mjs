@@ -1,0 +1,50 @@
+export default class AgentRegistry {
+    static projectSkillsDir(agentName) {
+        const normalized = String(agentName ?? "").trim().toLowerCase();
+        return PROJECT_SKILLS_DIRS.get(normalized) ?? null;
+    }
+}
+
+const PROJECT_SKILLS_DIRS = new Map([
+    ["adal", ".adal/skills"],
+    ["amp", ".agents/skills"],
+    ["antigravity", ".agent/skills"],
+    ["augment", ".augment/skills"],
+    ["claude-code", ".claude/skills"],
+    ["cline", ".agents/skills"],
+    ["codebuddy", ".codebuddy/skills"],
+    ["codex", ".agents/skills"],
+    ["command-code", ".commandcode/skills"],
+    ["continue", ".continue/skills"],
+    ["cortex", ".cortex/skills"],
+    ["crush", ".crush/skills"],
+    ["cursor", ".agents/skills"],
+    ["droid", ".factory/skills"],
+    ["gemini-cli", ".agents/skills"],
+    ["github-copilot", ".agents/skills"],
+    ["goose", ".goose/skills"],
+    ["iflow-cli", ".iflow/skills"],
+    ["junie", ".junie/skills"],
+    ["kilo", ".kilocode/skills"],
+    ["kimi-cli", ".agents/skills"],
+    ["kiro-cli", ".kiro/skills"],
+    ["kode", ".kode/skills"],
+    ["mcpjam", ".mcpjam/skills"],
+    ["mistral-vibe", ".vibe/skills"],
+    ["mux", ".mux/skills"],
+    ["neovate", ".neovate/skills"],
+    ["opencode", ".agents/skills"],
+    ["openclaw", "skills"],
+    ["openhands", ".openhands/skills"],
+    ["pi", ".pi/skills"],
+    ["pochi", ".pochi/skills"],
+    ["qoder", ".qoder/skills"],
+    ["qwen-code", ".qwen/skills"],
+    ["replit", ".agents/skills"],
+    ["roo", ".roo/skills"],
+    ["trae", ".trae/skills"],
+    ["trae-cn", ".trae/skills"],
+    ["universal", ".agents/skills"],
+    ["windsurf", ".windsurf/skills"],
+    ["zencoder", ".zencoder/skills"],
+]);

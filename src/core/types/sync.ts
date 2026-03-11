@@ -3,14 +3,21 @@ import type { ManagerErrorResult, ManagerHeader, ManagerTemplatesCreatedResult }
 
 type Reporter = (event: ManagerEvent) => void;
 
+export interface ManagedSkillEntry {
+    name: string;
+    sourcePath: string;
+}
+
 export interface SyncPlan {
     oldAgents: string[];
     newAgents: string[];
     agentsUnion: string[];
     agentsRemoved: string[];
     oldManaged: string[];
+    oldManagedEntries: ManagedSkillEntry[];
     newManaged: string[];
     skillsRemoved: string[];
+    skillsRemovedEntries: ManagedSkillEntry[];
 }
 
 export interface SyncPreflightConflict {

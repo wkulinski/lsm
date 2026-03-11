@@ -171,6 +171,76 @@ export default class SkillDiscovery {
         }
     }
 
+    collectSkillDirectories(source, skillSourcePaths) {
+        const resolved = this.resolveSource(source);
+        if (!resolved.ok) {
+            return { ok: false, error: resolved.error };
+        }
+
+        const clone = this._cloneRepo({ url: resolved.url, ref: resolved.ref, depth: 1 });
+        if (!clone.ok) {
+            return { ok: false, error: clone.error, details: clone.details };
+        }
+
+        try {
+            const basePath = clone.dir;
+            const unique = Helpers.sortUniq(
+                (Array.isArray(skillSourcePaths) ? skillSourcePaths : [])
+                    .map((entry) => this._normalizeRelativePath(entry, "skillSourcePaths"))
+            );
+
+            const directories = unique.map((sourcePath) => {
+                const absolutePath = path.resolve(basePath, sourcePath);
+                if (!this._isPathInside(absolutePath, basePath)) {
+                    return {
+                        ok: false,
+                        error: `Skill path escapes source root: ${sourcePath}`,
+                    };
+                }
+                if (!fs.existsSync(absolutePath)) {
+                    return {
+                        ok: false,
+                        error: `Skill path does not exist in source: ${sourcePath}`,
+                    };
+                }
+
+                const stat = fs.statSync(absolutePath);
+                if (!stat.isDirectory()) {
+                    return {
+                        ok: false,
+                        error: `Skill path is not a directory: ${sourcePath}`,
+                    };
+                }
+
+                const files = this._collectFilesRecursively(absolutePath).map((fileEntry) => ({
+                    path: fileEntry.relativePath,
+                    content: fs.readFileSync(fileEntry.absolutePath),
+                }));
+
+                return {
+                    ok: true,
+                    sourcePath,
+                    files,
+                };
+            });
+
+            const failed = directories.find((entry) => !entry.ok);
+            if (failed) {
+                return { ok: false, error: failed.error };
+            }
+
+            return {
+                ok: true,
+                directories: directories.map((entry) => ({
+                    sourcePath: entry.sourcePath,
+                    files: entry.files,
+                })),
+            };
+        } finally {
+            this._cleanupTempDir(clone.dir);
+        }
+    }
+
     discover(basePath, subpath) {
         const skills = [];
         const seen = new Set();

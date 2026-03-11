@@ -120,14 +120,35 @@ export default class Sync {
         const agentsUnion = Helpers.sortUniq([...oldAgents, ...newAgents]);
         const agentsRemoved = oldAgents.filter((a) => !newAgents.includes(a));
 
+        const oldManagedEntries = Helpers.sortUniq(
+            Object.values(lock.sources ?? {})
+                .flatMap((sourceMeta) => (Array.isArray(sourceMeta?.skillEntries) ? sourceMeta.skillEntries : []))
+                .filter((entry) => entry?.sourcePath)
+                .map((entry) => JSON.stringify({
+                    name: String(entry?.name ?? "").trim(),
+                    sourcePath: String(entry?.sourcePath ?? "").trim(),
+                }))
+        ).map((entry) => JSON.parse(entry));
         const oldManaged = this.manifestStore.lockManagedSkills(lock.sources);
         const newManaged = Helpers.sortUniq(Object.values(discovered).flatMap((x) => x.skills));
 
         const newSet = new Set(newManaged);
         // Intencjonalnie: usuwamy też skille, które zniknęły upstream (synchronizacja ze źródłem).
         const skillsRemoved = oldManaged.filter((s) => !newSet.has(s)); // prune missing + config removals
+        const removedSkillSet = new Set(skillsRemoved.map((skillName) => skillName.toLowerCase()));
+        const skillsRemovedEntries = oldManagedEntries.filter((entry) => removedSkillSet.has(entry.name.toLowerCase()));
 
-        return { oldAgents, newAgents, agentsUnion, agentsRemoved, oldManaged, newManaged, skillsRemoved };
+        return {
+            oldAgents,
+            newAgents,
+            agentsUnion,
+            agentsRemoved,
+            oldManaged,
+            oldManagedEntries,
+            newManaged,
+            skillsRemoved,
+            skillsRemovedEntries,
+        };
     }
 
     collectLocalChangeConflicts({ manifest, lock, discovered, plan }) {
@@ -384,7 +405,7 @@ export default class Sync {
     }
 
     removePhase(plan) {
-        const { agentsRemoved, oldManaged, agentsUnion, skillsRemoved } = plan;
+        const { agentsRemoved, oldManaged, oldManagedEntries, agentsUnion, skillsRemoved, skillsRemovedEntries } = plan;
         const summary = {
             removedFromRemovedAgents: oldManaged.length,
             prunedSkills: skillsRemoved.length,
@@ -395,11 +416,14 @@ export default class Sync {
 
         if (agentsRemoved.length && oldManaged.length) {
             this._chunk(oldManaged, 25).forEach((g) => {
-                const res = this.backend.removeSkills({ skills: g, agents: agentsRemoved });
+                const entries = oldManagedEntries.filter((entry) => g.some((skillName) => skillName.toLowerCase() === entry.name.toLowerCase()));
+                const res = this.backend.removeSkillEntries({ skillEntries: entries, agents: agentsRemoved });
                 if (!res.ok) {
                     throw Helpers.error("Failed while removing managed skills from removed agents.", {
                         status: res.status,
                         cmd: res.cmd,
+                        error: res.error,
+                        details: res.details,
                     });
                 }
             });
@@ -407,11 +431,14 @@ export default class Sync {
 
         if (skillsRemoved.length && agentsUnion.length) {
             this._chunk(skillsRemoved, 25).forEach((g) => {
-                const res = this.backend.removeSkills({ skills: g, agents: agentsUnion });
+                const entries = skillsRemovedEntries.filter((entry) => g.some((skillName) => skillName.toLowerCase() === entry.name.toLowerCase()));
+                const res = this.backend.removeSkillEntries({ skillEntries: entries, agents: agentsUnion });
                 if (!res.ok) {
                     throw Helpers.error("Failed while pruning removed or missing skills.", {
                         status: res.status,
                         cmd: res.cmd,
+                        error: res.error,
+                        details: res.details,
                     });
                 }
             });
@@ -432,9 +459,11 @@ export default class Sync {
                 return;
             }
 
-            const res = meta.mode === "all"
-                ? this.backend.addAllFromSource({ source, agents })
-                : this.backend.addSelected({ source, skills: desired, agents });
+            const res = this.backend.installSkillEntries({
+                source,
+                skillEntries: meta.skillEntries,
+                agents,
+            });
 
             installs.push({ source, ...res });
             if (!res.ok) { addFailed = true; }

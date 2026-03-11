@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { createRequire } from 'node:module';
+import packageJson from '../../package.json' with { type: 'json' };
 
 import Backend from './modules/Backend.mjs';
 import Manifest from './modules/Manifest.mjs';
@@ -20,9 +20,6 @@ import type {
     SyncPreflight,
     SyncRemovalSummary,
 } from './types';
-
-const DEFAULT_MAX_BUFFER = 10 * 1024 * 1024;
-const DEFAULT_DISABLE_TELEMETRY = process.env.DISABLE_TELEMETRY ?? '1';
 
 type UnknownRecord = Record<string, unknown>;
 type Reporter = (event: ManagerEvent) => void;
@@ -355,24 +352,11 @@ export class SkillsManager {
         try {
             const backend = new Backend({
                 root: manifestRuntime.root,
-                requireFn: createRequire(path.join(manifestRuntime.root, 'package.json')),
-                maxBuffer: this.options.maxBuffer ?? DEFAULT_MAX_BUFFER,
-                disableTelemetry: this.options.disableTelemetry ?? DEFAULT_DISABLE_TELEMETRY,
             });
-
-            const version = backend.getVersion();
-            if (!version.ok) {
-                return {
-                    status: 'error',
-                    exitCode: 1,
-                    error: 'Failed to read skills CLI version.',
-                    details: String(version.stderr || version.stdout || '').trim() || undefined,
-                };
-            }
 
             const header: ManagerHeader = {
                 root: manifestRuntime.root,
-                cliVersion: String(version.stdout || version.stderr).trim(),
+                cliVersion: typeof packageJson.version === 'string' ? packageJson.version : '0.0.0',
                 manifestPath: manifestRuntime.manifestPath,
                 manifestRelativePath: path.relative(manifestRuntime.root, manifestRuntime.manifestPath),
                 lockPath: manifestRuntime.lockPath,
