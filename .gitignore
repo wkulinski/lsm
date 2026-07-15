@@ -10,3 +10,6 @@ docs/HANDOFF.md
 /.env.local
 /.env.*.local
 /.env
+/.agents/skills/
+!/.agents/skills/llm-skills-manager/
+/docs/tmp/
