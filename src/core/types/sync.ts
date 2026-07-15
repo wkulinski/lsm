@@ -51,9 +51,9 @@ export interface SharedSyncError {
 
 export interface SharedSyncResult {
     sharedFailed: boolean;
-    managedNewLocalPaths: Record<string, string[]>;
-    sharedStats: Record<string, { declaredFiles: number; copiedFiles: number }>;
-    sharedFileHashesBySource: Record<string, Array<{ path: string; sha256: string }>>;
+    managedNewLocalPaths: { [key: string]: string[] };
+    sharedStats: { [key: string]: { declaredFiles: number; copiedFiles: number } };
+    sharedFileHashesBySource: { [key: string]: { path: string; sha256: string }[] };
     removedFiles?: number;
     errors: SharedSyncError[];
 }
@@ -111,17 +111,17 @@ export interface SyncCompletedResult {
     header: ManagerHeader;
     plan: SyncPlan;
     preflight: SyncPreflight;
-    missingRequested: Array<{ source: string; skill: string }>;
+    missingRequested: { source: string; skill: string }[];
     installs: SyncInstallResult[];
     shared: SharedSyncResult;
     removal: SyncRemovalSummary;
     lockWritten: boolean;
 }
 
-export type SyncCommandResult =
-    | ManagerTemplatesCreatedResult
-    | ManagerErrorResult
-    | SyncCancelledResult
-    | SyncAddFailedResult
-    | SyncSharedFailedResult
-    | SyncCompletedResult;
+export type SyncCommandResult
+    = | ManagerTemplatesCreatedResult
+        | ManagerErrorResult
+        | SyncCancelledResult
+        | SyncAddFailedResult
+        | SyncSharedFailedResult
+        | SyncCompletedResult;

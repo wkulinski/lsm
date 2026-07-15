@@ -2,7 +2,7 @@ import type { ManagerEvent } from './events';
 import type { ManagerErrorResult, ManagerHeader, ManagerTemplatesCreatedResult } from './manager';
 
 type Reporter = (event: ManagerEvent) => void;
-type UnknownRecord = Record<string, unknown>;
+interface UnknownRecord { [key: string]: unknown }
 
 export interface PublishCommandOptions {
     source?: string | null;
@@ -25,7 +25,7 @@ export interface PublishCompletedResult {
     result: UnknownRecord;
 }
 
-export type PublishCommandResult =
-    | ManagerTemplatesCreatedResult
-    | ManagerErrorResult
-    | PublishCompletedResult;
+export type PublishCommandResult
+    = | ManagerTemplatesCreatedResult
+        | ManagerErrorResult
+        | PublishCompletedResult;

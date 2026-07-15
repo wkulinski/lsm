@@ -1,53 +1,64 @@
 {
-  "name": "tsdown-starter",
-  "type": "module",
-  "version": "0.0.0",
-  "description": "A starter for creating a TypeScript package.",
-  "author": "Author Name <author.name@mail.com>",
-  "license": "MIT",
-  "homepage": "https://github.com/wkulinski/lsm",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/wkulinski/lsm.git"
-  },
-  "bugs": {
-    "url": "https://github.com/wkulinski/lsm/issues"
-  },
-  "exports": {
-    ".": "./dist/index.mjs",
-    "./bin": "./dist/bin.mjs",
-    "./package.json": "./package.json"
-  },
-  "main": "./dist/index.mjs",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.mts",
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "build": "tsdown",
-    "dev": "tsdown --watch",
-    "test": "vitest run",
-    "typecheck": "tsc --noEmit",
-    "prepublishOnly": "pnpm run build",
-    "lint": "eslint ."
-  },
-  "devDependencies": {
-    "@types/node": "^25.0.3",
-    "bumpp": "^10.3.2",
-    "tsdown": "^0.18.1",
-    "typescript": "^5.9.3",
-    "vitest": "^4.0.16"
-  },
-  "directories": {
-    "test": "tests"
-  },
-  "keywords": [],
-  "dependencies": {
-    "commander": "^14.0.3",
-    "gray-matter": "^4.0.3"
-  },
-  "bin": {
-    "manager": "./bin/lsm"
-  }
+    "name": "tsdown-starter",
+    "type": "module",
+    "version": "0.0.0",
+    "description": "A starter for creating a TypeScript package.",
+    "author": "Author Name <author.name@mail.com>",
+    "license": "MIT",
+    "homepage": "https://github.com/wkulinski/lsm",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/wkulinski/lsm.git"
+    },
+    "bugs": {
+        "url": "https://github.com/wkulinski/lsm/issues"
+    },
+    "exports": {
+        ".": "./dist/index.mjs",
+        "./bin": "./dist/bin.mjs",
+        "./package.json": "./package.json"
+    },
+    "main": "./dist/index.mjs",
+    "module": "./dist/index.mjs",
+    "types": "./dist/index.d.mts",
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "tsdown",
+        "dev": "tsdown --watch",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "test:typecheck": "tsc --noEmit --project tsconfig.vitest.json",
+        "typecheck": "tsc --noEmit",
+        "prepublishOnly": "pnpm run build",
+        "lint:js": "eslint",
+        "lint:js:fix": "eslint --fix",
+        "lint:js:fix:dry": "eslint --fix-dry-run",
+        "lint:ts:typecheck": "tsc --noEmit"
+    },
+    "devDependencies": {
+        "@eslint/js": "^10.0.1",
+        "@stylistic/eslint-plugin": "^5.10.0",
+        "@types/node": "^25.0.3",
+        "@typescript-eslint/eslint-plugin": "^8.57.0",
+        "@typescript-eslint/parser": "^8.57.0",
+        "bumpp": "^10.3.2",
+        "eslint": "^10.0.3",
+        "globals": "^17.6.0",
+        "tsdown": "^0.18.1",
+        "typescript": "^5.9.3",
+        "vitest": "^4.0.16"
+    },
+    "directories": {
+        "test": "tests"
+    },
+    "keywords": [],
+    "dependencies": {
+        "commander": "^14.0.3",
+        "gray-matter": "^4.0.3"
+    },
+    "bin": {
+        "manager": "./bin/lsm"
+    }
 }
