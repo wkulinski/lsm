@@ -1,9 +1,9 @@
 {
-    "name": "tsdown-starter",
+    "name": "@wkulinski/lsm",
     "type": "module",
-    "version": "0.0.0",
-    "description": "A starter for creating a TypeScript package.",
-    "author": "Author Name <author.name@mail.com>",
+    "version": "0.1.0",
+    "description": "Declarative manager for synchronizing and publishing LLM skills across AI agents.",
+    "author": "Wojciech Kuliński",
     "license": "MIT",
     "homepage": "https://github.com/wkulinski/lsm",
     "repository": {
@@ -12,6 +12,9 @@
     },
     "bugs": {
         "url": "https://github.com/wkulinski/lsm/issues"
+    },
+    "publishConfig": {
+        "access": "public"
     },
     "exports": {
         ".": "./dist/index.mjs",
@@ -31,7 +34,7 @@
         "test:watch": "vitest",
         "test:typecheck": "tsc --noEmit --project tsconfig.vitest.json",
         "typecheck": "tsc --noEmit",
-        "prepublishOnly": "pnpm run build",
+        "prepublishOnly": "npm run build",
         "lint:js": "eslint",
         "lint:js:fix": "eslint --fix",
         "lint:js:fix:dry": "eslint --fix-dry-run",
@@ -59,6 +62,6 @@
         "gray-matter": "^4.0.3"
     },
     "bin": {
-        "manager": "./bin/lsm"
+        "lsm": "bin/lsm"
     }
 }

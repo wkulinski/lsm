@@ -9,6 +9,16 @@ Narzędzie potrafi:
 - usuwać skille, które zniknęły z konfiguracji albo upstreamu,
 - publikować lokalne zmiany z powrotem do repozytorium źródłowego.
 
+## Instalacja
+
+Instalacja CLI globalnie:
+
+```bash
+npm install --global @wkulinski/lsm
+```
+
+Po instalacji dostępna jest komenda `lsm`.
+
 ## Konfiguracja
 
 Domyślnie `lsm` pracuje na plikach:
@@ -103,8 +113,15 @@ node bin/lsm publish \
 
 ## Biblioteka
 
-Pakiet udostępnia też API programistyczne przez `src/index.ts`. Główny punkt wejścia to
-`createManager()`, który pozwala uruchomić `sync` i `publish` programowo, bez bezpośredniego użycia CLI.
+Pakiet udostępnia też API programistyczne. Główny punkt wejścia to `createManager()`,
+który pozwala uruchomić `sync` i `publish` programowo, bez bezpośredniego użycia CLI.
+
+```ts
+import { createManager } from '@wkulinski/lsm';
+
+const manager = createManager({ cwd: process.cwd() });
+await manager.runSync();
+```
 
 ## Pomoc
 
