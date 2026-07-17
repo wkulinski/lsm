@@ -16,6 +16,24 @@ describe('CLI composition', () => {
         await expect(runCli(['--help'])).resolves.toBe(0);
     });
 
+    test('defaults to sync when no command is provided', async () => {
+        const tempDir = createTempDir();
+        vi.spyOn(process, 'cwd').mockReturnValue(tempDir);
+
+        try {
+            await expect(runCli([])).resolves.toBe(1);
+            expect(fs.existsSync(`${tempDir}/skills.json`)).toBe(true);
+        }
+        finally {
+            fs.rmSync(tempDir, { recursive: true, force: true });
+        }
+    });
+
+    test('returns commander errors for unknown commands and options', async () => {
+        await expect(runCli(['unknown'])).resolves.toBe(1);
+        await expect(runCli(['sync', '--unknown'])).resolves.toBe(1);
+    });
+
     test('sync command creates missing config templates in the current project', async () => {
         const tempDir = createTempDir();
         vi.spyOn(process, 'cwd').mockReturnValue(tempDir);

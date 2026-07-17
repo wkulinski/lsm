@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import matter from 'gray-matter';
+import { parseDocument } from 'yaml';
 
 import { hasSymlinkInPath, isPathInside, toPosixPath } from '../filesystem/PathUtils';
 import type { SkillDefinition } from '../types/discovery';
@@ -45,7 +45,7 @@ export default class SkillFrontmatterParser {
         }
         try {
             const content = fs.readFileSync(filePath, 'utf8');
-            const data = matter(content).data as SkillFrontmatter;
+            const data = parseSkillFrontmatter(content) as SkillFrontmatter;
             if (typeof data.name !== 'string' || typeof data.description !== 'string') {
                 return null;
             }
@@ -154,4 +154,18 @@ export default class SkillFrontmatterParser {
 
         return tokens.length > 0 ? tokens.join('/') : '.';
     }
+}
+
+function parseSkillFrontmatter(content: string): unknown {
+    const match = /^(?:\uFEFF)?---[ \t]*\r?\n([\s\S]*?)\r?\n(?:---|\.\.\.)[ \t]*(?:\r?\n|$)/.exec(content);
+    if (!match) {
+        return {};
+    }
+
+    const document = parseDocument(match[1]);
+    if (document.errors.length > 0) {
+        throw document.errors[0];
+    }
+
+    return document.toJS({ maxAliasCount: 0 });
 }

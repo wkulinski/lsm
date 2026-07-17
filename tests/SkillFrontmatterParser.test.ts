@@ -133,4 +133,52 @@ describe('SkillFrontmatterParser', () => {
             fs.rmSync(tempDir, { recursive: true, force: true });
         }
     });
+
+    test('rejects malformed YAML frontmatter with a contextual error', () => {
+        const tempDir = createTempDir();
+
+        try {
+            const skillsRoot = path.join(tempDir, 'skills');
+            const skillDir = path.join(skillsRoot, 'example');
+            writeSkillMd(skillDir, [
+                '---',
+                'name: [unterminated',
+                'description: Broken',
+                '---',
+            ].join('\n'));
+
+            expect(() => new SkillFrontmatterParser().parseSkillMd(skillDir, {
+                basePath: tempDir,
+                searchPath: skillsRoot,
+            })).toThrow(`Invalid skill definition in ${path.join(skillDir, 'SKILL.md')}`);
+        }
+        finally {
+            fs.rmSync(tempDir, { recursive: true, force: true });
+        }
+    });
+
+    test('rejects YAML aliases instead of expanding unbounded input', () => {
+        const tempDir = createTempDir();
+
+        try {
+            const skillsRoot = path.join(tempDir, 'skills');
+            const skillDir = path.join(skillsRoot, 'example');
+            writeSkillMd(skillDir, [
+                '---',
+                'name: Example',
+                'description: Alias test',
+                'anchor: &anchor value',
+                'alias: *anchor',
+                '---',
+            ].join('\n'));
+
+            expect(() => new SkillFrontmatterParser().parseSkillMd(skillDir, {
+                basePath: tempDir,
+                searchPath: skillsRoot,
+            })).toThrow('Alias resolution is disabled');
+        }
+        finally {
+            fs.rmSync(tempDir, { recursive: true, force: true });
+        }
+    });
 });
