@@ -5,6 +5,9 @@
     "description": "Declarative manager for synchronizing and publishing LLM skills across AI agents.",
     "author": "Wojciech Kuliński",
     "license": "MIT",
+    "engines": {
+        "node": ">=20"
+    },
     "homepage": "https://github.com/wkulinski/lsm",
     "repository": {
         "type": "git",
