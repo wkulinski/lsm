@@ -115,7 +115,10 @@ export default class PublishWorkspace {
             };
         }
 
-        const addResult = this.git(cloneDir, ['add', '--', ...stagedPaths]);
+        // Publish plans contain only explicitly managed, path-validated files.
+        // Force-add is required when a source repository intentionally ignores
+        // its skills directory (for example /.agents/skills/).
+        const addResult = this.git(cloneDir, ['add', '-f', '--', ...stagedPaths]);
         if (!addResult.ok) {
             return {
                 ok: false,
