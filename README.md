@@ -123,6 +123,20 @@ const manager = createManager({ cwd: process.cwd() });
 await manager.runSync();
 ```
 
+## Wydanie
+
+Publikacja kolejnych wersji odbywa się przez GitHub Release. Trusted Publisher
+na npm musi wskazywać workflow `.github/workflows/publish.yml`.
+
+```bash
+npm version patch
+git push --follow-tags
+gh release create v0.1.1 --generate-notes
+```
+
+Workflow uruchomi testy, coverage, typecheck, lint, build i opublikuje dokładny
+tag release na npm.
+
 ## Pomoc
 
 Lista dostępnych komend:
