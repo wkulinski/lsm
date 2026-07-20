@@ -11,6 +11,9 @@ docs/HANDOFF.md
 /.env.local
 /.env.*.local
 /.env
-/.agents/skills/
+/.agents/skills/*
 !/.agents/skills/llm-skills-manager/
+!/.agents/skills/llm-skills-manager/**
+!/.agents/skills/npm-release-manager/
+!/.agents/skills/npm-release-manager/**
 /docs/tmp/

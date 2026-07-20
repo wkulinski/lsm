@@ -3,6 +3,7 @@ import path from 'node:path';
 
 import { describe, expect, test } from 'vitest';
 
+import GitRunner from '../src/core/git/GitRunner';
 import PublishWorkspace, { type PublishGitResult, type PublishGitRunner } from '../src/core/publish/PublishWorkspace';
 import { createTempDir } from './helpers';
 
@@ -110,13 +111,65 @@ describe('PublishWorkspace', () => {
             expect(gitCalls).toEqual([
                 {
                     cwd: cloneDir,
-                    args: ['add', '--', '.agents/skills/shared/file.md'],
+                    args: ['add', '-f', '--', '.agents/skills/shared/file.md'],
                 },
                 {
                     cwd: cloneDir,
                     args: ['diff', '--cached', '--name-status'],
                 },
             ]);
+        }
+        finally {
+            fs.rmSync(tempDir, { recursive: true, force: true });
+        }
+    });
+
+    test('force-stages managed files below an ignored skills directory', () => {
+        const tempDir = createTempDir();
+        const cloneDir = path.join(tempDir, 'clone');
+        const localExistingSkill = path.join(tempDir, 'local', 'llm-skills-manager', 'SKILL.md');
+        const localNewSkill = path.join(tempDir, 'local', 'new-skill', 'SKILL.md');
+        const existingTarget = path.join(cloneDir, '.agents', 'skills', 'llm-skills-manager', 'SKILL.md');
+
+        try {
+            writeFile(path.join(cloneDir, '.gitignore'), '/.agents/skills/\n!/.agents/skills/llm-skills-manager/\n');
+            writeFile(existingTarget, '# Original\n');
+            writeFile(localExistingSkill, '# Updated\n');
+            writeFile(localNewSkill, '# New\n');
+
+            const git = new GitRunner();
+            expect(git.run(null, ['init', cloneDir]).ok).toBe(true);
+            expect(git.run(cloneDir, ['config', 'user.email', 'test@example.com']).ok).toBe(true);
+            expect(git.run(cloneDir, ['config', 'user.name', 'Test User']).ok).toBe(true);
+            expect(git.run(cloneDir, ['add', '-f', '--', '.gitignore', '.agents/skills/llm-skills-manager/SKILL.md']).ok).toBe(true);
+            expect(git.run(cloneDir, ['commit', '-m', 'initial']).ok).toBe(true);
+
+            const workspace = new PublishWorkspace({
+                gitRunner: (cwd, args): PublishGitResult => git.run(cwd, args),
+            });
+            const result = workspace.stagePublishPlan({
+                cloneDir,
+                planItems: [
+                    {
+                        type: 'file',
+                        localPath: localExistingSkill,
+                        targetPath: '.agents/skills/llm-skills-manager/SKILL.md',
+                    },
+                    {
+                        type: 'directory',
+                        localPath: path.dirname(localNewSkill),
+                        targetPath: '.agents/skills/new-skill',
+                    },
+                ],
+            });
+
+            expect(result).toEqual({
+                ok: true,
+                changedFiles: [
+                    { status: 'M', path: '.agents/skills/llm-skills-manager/SKILL.md' },
+                    { status: 'A', path: '.agents/skills/new-skill/SKILL.md' },
+                ],
+            });
         }
         finally {
             fs.rmSync(tempDir, { recursive: true, force: true });
@@ -262,7 +315,7 @@ function createGitRunner(
     return (cwd: string, args: string[]) => {
         calls.push({ cwd, args });
         const command = args.join(' ');
-        if (command.startsWith('add -- ')) {
+        if (command.startsWith('add -f -- ')) {
             return {
                 ok: addOk,
                 status: addOk ? 0 : 1,
