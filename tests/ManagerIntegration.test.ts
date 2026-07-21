@@ -70,6 +70,91 @@ describe('manager integration', () => {
         }
     });
 
+    test('syncs published local changes without a false conflict', async () => {
+        const root = createTempDir();
+        const sourceDir = path.join(root, 'source');
+        const workspaceDir = path.join(root, 'workspace');
+        const sourceName = 'local/source';
+        const resolvedSource: ResolvedSource = {
+            ok: true,
+            handler: 'github',
+            provider: 'github',
+            url: sourceDir,
+            ref: null,
+            subpath: null,
+            webUrl: sourceDir,
+        };
+
+        try {
+            createSourceRepository(sourceDir);
+            fs.mkdirSync(workspaceDir, { recursive: true });
+            fs.writeFileSync(path.join(workspaceDir, 'skills.json'), JSON.stringify({
+                agents: ['codex'],
+                sources: [{ source: sourceName }],
+            }), 'utf8');
+            fs.writeFileSync(path.join(workspaceDir, 'skills.lock.json'), JSON.stringify({
+                schemaVersion: 5,
+                generatedAt: new Date().toISOString(),
+                agents: [],
+                sources: {},
+            }), 'utf8');
+            vi.spyOn(SourceResolver.prototype, 'resolve').mockReturnValue(resolvedSource);
+
+            const manager = createManager({ cwd: workspaceDir });
+            const initialSync = await manager.runSync();
+            expect(initialSync.status).toBe('completed');
+
+            const localSkillPath = path.join(workspaceDir, '.agents', 'skills', 'example', 'SKILL.md');
+            const localSharedPath = path.join(workspaceDir, '.agents', 'skills', 'shared', 'config.json');
+            const publishedSkill = [
+                '---',
+                'name: Example',
+                'description: Example skill',
+                'shared_files:',
+                '  - shared/config.json',
+                '---',
+                '',
+                '# Published',
+                '',
+            ].join('\n');
+            fs.writeFileSync(localSkillPath, publishedSkill, 'utf8');
+            fs.writeFileSync(localSharedPath, '{"enabled":false}\n', 'utf8');
+
+            fs.writeFileSync(path.join(sourceDir, '.agents', 'skills', 'example', 'SKILL.md'), publishedSkill, 'utf8');
+            fs.writeFileSync(path.join(sourceDir, '.agents', 'skills', 'shared', 'config.json'), '{"enabled":false}\n', 'utf8');
+            commitSourceRepository(sourceDir, 'published local changes');
+
+            const result = await manager.runSync();
+
+            expect(result).toMatchObject({
+                status: 'completed',
+                exitCode: 0,
+                lockWritten: true,
+                preflight: {
+                    ok: true,
+                    conflicts: [],
+                },
+            });
+            expect(fs.readFileSync(localSkillPath, 'utf8')).toBe(publishedSkill);
+            expect(fs.readFileSync(localSharedPath, 'utf8')).toBe('{"enabled":false}\n');
+            const lock = JSON.parse(fs.readFileSync(path.join(workspaceDir, 'skills.lock.json'), 'utf8')) as {
+                sources: {
+                    [key: string]: {
+                        skillEntries: { hash: { treeSha256: string } }[];
+                        sharedFileHashes: { path: string; sha256: string }[];
+                    };
+                };
+            };
+            expect(lock.sources[sourceName].skillEntries[0].hash.treeSha256).toEqual(expect.any(String));
+            expect(lock.sources[sourceName].sharedFileHashes).toHaveLength(1);
+            expect(lock.sources[sourceName].sharedFileHashes[0].path).toBe('.agents/skills/shared/config.json');
+            expect(lock.sources[sourceName].sharedFileHashes[0].sha256).toEqual(expect.any(String));
+        }
+        finally {
+            fs.rmSync(root, { recursive: true, force: true });
+        }
+    });
+
     test('plans a publish from local changes without mutating the source in dry-run mode', async () => {
         const root = createTempDir();
         const sourceDir = path.join(root, 'source');
@@ -160,4 +245,10 @@ function createSourceRepository(sourceDir: string): void {
     expect(runner.run(sourceDir, ['config', 'user.name', 'Test User']).ok).toBe(true);
     expect(runner.run(sourceDir, ['add', '.']).ok).toBe(true);
     expect(runner.run(sourceDir, ['commit', '-m', 'initial']).ok).toBe(true);
+}
+
+function commitSourceRepository(sourceDir: string, message: string): void {
+    const runner = new GitRunner();
+    expect(runner.run(sourceDir, ['add', '.']).ok).toBe(true);
+    expect(runner.run(sourceDir, ['commit', '-m', message]).ok).toBe(true);
 }

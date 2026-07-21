@@ -20,6 +20,7 @@ export default class SyncPreflightSkillConflicts {
     public collectSkillDirectoryConflictsForAgent({
         source,
         entry,
+        targetEntry,
         agentSkillDir,
         relativePath,
         removedSkills,
@@ -29,6 +30,7 @@ export default class SyncPreflightSkillConflicts {
     }: {
         source: string;
         entry: SkillEntry;
+        targetEntry?: SkillEntry;
         agentSkillDir: string;
         relativePath: string;
         removedSkills: Set<string>;
@@ -52,6 +54,14 @@ export default class SyncPreflightSkillConflicts {
             ? 'delete'
             : 'overwrite';
         const baselineHash = this.normalizeSkillBaselineHash(entry.hash);
+        const currentHash = Hashing.hashDirectory(localSkillDir);
+        const targetHash = this.normalizeSkillBaselineHash(targetEntry?.hash);
+        if (!currentHash) {
+            return;
+        }
+        if (targetHash?.treeSha256 === currentHash.treeSha256) {
+            return;
+        }
         if (!baselineHash) {
             conflictSet.add({
                 path: localSkillDirRelative,
@@ -63,9 +73,7 @@ export default class SyncPreflightSkillConflicts {
             });
             return;
         }
-
-        const currentHash = Hashing.hashDirectory(localSkillDir);
-        if (!currentHash || currentHash.treeSha256 === baselineHash.treeSha256) {
+        if (currentHash.treeSha256 === baselineHash.treeSha256) {
             return;
         }
 

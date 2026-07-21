@@ -73,6 +73,12 @@ export default class SyncPreflightConflicts {
 
         Object.entries(lock.sources).forEach(([source, sourceMeta]) => {
             const skillEntries = Array.isArray(sourceMeta.skillEntries) ? sourceMeta.skillEntries : [];
+            const targetSourceMeta = Object.hasOwn(discovered, source)
+                ? discovered[source]
+                : null;
+            const targetSkillEntries = targetSourceMeta && Array.isArray(targetSourceMeta.skillEntries)
+                ? targetSourceMeta.skillEntries
+                : [];
             const sourceSkillsRoot = this.pathMapper.resolveSourceSkillsRootPrefix(skillEntries);
             if (!sourceSkillsRoot.ok) {
                 return;
@@ -88,6 +94,7 @@ export default class SyncPreflightConflicts {
                     this.skillConflicts.collectSkillDirectoryConflictsForAgent({
                         source,
                         entry,
+                        targetEntry: targetSkillEntries.find(target => target.sourcePath === entry.sourcePath),
                         agentSkillDir,
                         relativePath,
                         removedSkills,
@@ -101,7 +108,9 @@ export default class SyncPreflightConflicts {
             this.sharedConflicts.collectSharedFileConflictsForSource({
                 source,
                 skillEntries,
-                sharedFileHashes: sourceMeta.sharedFileHashes,
+                targetSkillEntries,
+                baselineSharedFileHashes: sourceMeta.sharedFileHashes,
+                targetSharedFileHashes: targetSourceMeta ? targetSourceMeta.sharedFileHashes : [],
                 sourceSkillsRootPrefix: sourceSkillsRoot.prefix,
                 allAgentSkillDirs,
                 currentDirSet,
