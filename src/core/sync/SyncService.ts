@@ -1,5 +1,6 @@
 import { lockSourcesFromDiscovered } from '../manifest/lockMappers';
 import { normalizeError } from '../shared/errors';
+import SyncLockValidator from './SyncLockValidator';
 import type {
     DiscoveredSources,
     LockData,
@@ -21,7 +22,7 @@ import type {
 export type SyncServiceReporter = (event: ManagerEvent) => void;
 
 export interface SyncServiceOperations {
-    discover(manifest: ManifestData): {
+    discover(manifest: ManifestData, options?: { update?: boolean; lock?: LockData }): {
         discovered: DiscoveredSources;
         missingRequested: { source: string; skill: string }[];
     };
@@ -61,6 +62,8 @@ type SyncPreflightDecision
         | { ok: false; result: SyncPreflightFailure };
 
 export default class SyncService {
+    private readonly lockValidator = new SyncLockValidator();
+
     public async run(
         {
             runtime,
@@ -75,9 +78,23 @@ export default class SyncService {
         report?.({ type: 'header', header: runtime.header });
 
         try {
+            const isUpdate = options.update === true;
+            const manifestLockError = this.validateManifestLock(runtime, isUpdate);
+            if (manifestLockError) {
+                return manifestLockError;
+            }
+
             report?.({ type: 'sync-discover-start' });
-            const discovery = runtime.sync.discover(runtime.manifest);
+            const discovery = runtime.sync.discover(runtime.manifest, {
+                update: isUpdate,
+                lock: runtime.lock,
+            });
             runtime.sync.assertNoConflicts(discovery.discovered);
+
+            const discoveredLockError = this.validateDiscoveredLock(runtime, discovery.discovered, isUpdate);
+            if (discoveredLockError) {
+                return discoveredLockError;
+            }
 
             const plan = runtime.sync.planRemovals({
                 lock: runtime.lock,
@@ -143,7 +160,8 @@ export default class SyncService {
             const removal = runtime.sync.removePhase(plan);
 
             const shouldFail = discovery.missingRequested.length > 0;
-            if (!shouldFail) {
+            const lockWritten = isUpdate && !shouldFail;
+            if (lockWritten) {
                 runtime.manifestStore.writeLock({
                     agents: runtime.manifest.agents,
                     sources: lockSourcesFromDiscovered(discovery.discovered, shared.sharedFileHashesBySource),
@@ -160,7 +178,8 @@ export default class SyncService {
                 installs: addResult.installs,
                 shared,
                 removal,
-                lockWritten: !shouldFail,
+                lockWritten,
+                lockMode: isUpdate ? 'updated' : 'locked',
             };
         }
         catch (error) {
@@ -173,6 +192,28 @@ export default class SyncService {
                 header: runtime.header,
             };
         }
+    }
+
+    private validateManifestLock(runtime: SyncServiceRuntime, isUpdate: boolean): ManagerErrorResult | null {
+        if (isUpdate) {
+            return null;
+        }
+
+        const error = this.lockValidator.validateManifest({ manifest: runtime.manifest, lock: runtime.lock });
+        return error
+            ? { status: 'error', exitCode: 1, error, header: runtime.header }
+            : null;
+    }
+
+    private validateDiscoveredLock(runtime: SyncServiceRuntime, discovered: DiscoveredSources, isUpdate: boolean): ManagerErrorResult | null {
+        if (isUpdate) {
+            return null;
+        }
+
+        const error = this.lockValidator.validateDiscovered({ lock: runtime.lock, discovered });
+        return error
+            ? { status: 'error', exitCode: 1, error, header: runtime.header }
+            : null;
     }
 
     private async resolveSyncPreflight({

@@ -44,7 +44,7 @@ describe('manager integration', () => {
             }), 'utf8');
             vi.spyOn(SourceResolver.prototype, 'resolve').mockReturnValue(resolvedSource);
 
-            const result = await createManager({ cwd: workspaceDir }).runSync();
+            const result = await createManager({ cwd: workspaceDir }).runSync({ update: true });
 
             expect(result).toMatchObject({
                 status: 'completed',
@@ -64,6 +64,78 @@ describe('manager integration', () => {
                 sourcePath: '.agents/skills/example',
                 sharedFiles: ['.agents/skills/shared/config.json'],
             }]);
+        }
+        finally {
+            fs.rmSync(root, { recursive: true, force: true });
+        }
+    });
+
+    test('keeps locked sync on the recorded commit until update is requested', async () => {
+        const root = createTempDir();
+        const sourceDir = path.join(root, 'source');
+        const workspaceDir = path.join(root, 'workspace');
+        const sourceName = 'local/source';
+        const resolvedSource: ResolvedSource = {
+            ok: true,
+            handler: 'github',
+            provider: 'github',
+            url: sourceDir,
+            ref: null,
+            subpath: null,
+            webUrl: sourceDir,
+        };
+
+        try {
+            createSourceRepository(sourceDir);
+            fs.mkdirSync(workspaceDir, { recursive: true });
+            fs.writeFileSync(path.join(workspaceDir, 'skills.json'), JSON.stringify({
+                agents: ['codex'],
+                sources: [{ source: sourceName }],
+            }), 'utf8');
+            fs.writeFileSync(path.join(workspaceDir, 'skills.lock.json'), JSON.stringify({
+                schemaVersion: 5,
+                agents: [],
+                sources: {},
+            }), 'utf8');
+            vi.spyOn(SourceResolver.prototype, 'resolve').mockReturnValue(resolvedSource);
+
+            const manager = createManager({ cwd: workspaceDir });
+            await expect(manager.runSync({ update: true })).resolves.toMatchObject({
+                status: 'completed',
+                lockWritten: true,
+            });
+
+            const localSkillPath = path.join(workspaceDir, '.agents', 'skills', 'example', 'SKILL.md');
+            const lockPath = path.join(workspaceDir, 'skills.lock.json');
+            const initialLock = fs.readFileSync(lockPath, 'utf8');
+            const updatedSkill = [
+                '---',
+                'name: Example',
+                'description: Example skill',
+                'shared_files:',
+                '  - shared/config.json',
+                '---',
+                '',
+                '# Updated upstream',
+                '',
+            ].join('\n');
+            fs.writeFileSync(path.join(sourceDir, '.agents', 'skills', 'example', 'SKILL.md'), updatedSkill, 'utf8');
+            commitSourceRepository(sourceDir, 'update upstream skill');
+
+            await expect(manager.runSync()).resolves.toMatchObject({
+                status: 'completed',
+                lockWritten: false,
+                preflight: { conflicts: [] },
+            });
+            expect(fs.readFileSync(localSkillPath, 'utf8')).not.toBe(updatedSkill);
+            expect(fs.readFileSync(lockPath, 'utf8')).toBe(initialLock);
+
+            await expect(manager.runSync({ update: true })).resolves.toMatchObject({
+                status: 'completed',
+                lockWritten: true,
+            });
+            expect(fs.readFileSync(localSkillPath, 'utf8')).toBe(updatedSkill);
+            expect(fs.readFileSync(lockPath, 'utf8')).not.toBe(initialLock);
         }
         finally {
             fs.rmSync(root, { recursive: true, force: true });
@@ -101,7 +173,7 @@ describe('manager integration', () => {
             vi.spyOn(SourceResolver.prototype, 'resolve').mockReturnValue(resolvedSource);
 
             const manager = createManager({ cwd: workspaceDir });
-            const initialSync = await manager.runSync();
+            const initialSync = await manager.runSync({ update: true });
             expect(initialSync.status).toBe('completed');
 
             const localSkillPath = path.join(workspaceDir, '.agents', 'skills', 'example', 'SKILL.md');
@@ -124,7 +196,7 @@ describe('manager integration', () => {
             fs.writeFileSync(path.join(sourceDir, '.agents', 'skills', 'shared', 'config.json'), '{"enabled":false}\n', 'utf8');
             commitSourceRepository(sourceDir, 'published local changes');
 
-            const result = await manager.runSync();
+            const result = await manager.runSync({ update: true });
 
             expect(result).toMatchObject({
                 status: 'completed',
@@ -186,7 +258,7 @@ describe('manager integration', () => {
             vi.spyOn(SourceResolver.prototype, 'resolve').mockReturnValue(resolvedSource);
 
             const manager = createManager({ cwd: workspaceDir });
-            const syncResult = await manager.runSync();
+            const syncResult = await manager.runSync({ update: true });
             expect(syncResult.status).toBe('completed');
 
             const localSkillPath = path.join(workspaceDir, '.agents', 'skills', 'example', 'SKILL.md');

@@ -30,7 +30,7 @@ export default class SyncSharedFileCopier {
     }
 
     public copySourceSharedFiles(
-        { source, skillEntries, agentSkillDirs }: { source: string; skillEntries: SkillEntry[]; agentSkillDirs: string[] },
+        { source, skillEntries, agentSkillDirs, resolvedCommit = null }: { source: string; skillEntries: SkillEntry[]; agentSkillDirs: string[]; resolvedCommit?: string | null },
     ): SyncSharedFileCopyResult {
         const sourceSharedFiles = this.pathMapper.collectSharedFilesFromSkillEntries(skillEntries);
         let copiedFiles = 0;
@@ -58,7 +58,7 @@ export default class SyncSharedFileCopier {
             };
         }
 
-        const collected = this.backend.collectSharedFiles(source, sourceSharedFiles);
+        const collected = this.backend.collectSharedFiles(source, sourceSharedFiles, { resolvedCommit });
         if (!collected.ok) {
             return {
                 managedLocalPaths: [],

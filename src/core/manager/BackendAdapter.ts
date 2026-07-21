@@ -31,12 +31,12 @@ export default class BackendAdapter {
         return new BackendSourceService().resolveSource(source);
     }
 
-    public collectSharedFiles(source: string, sharedFiles: string[]): CollectSharedFilesSuccess | FailureResult {
-        return new BackendSourceService().collectSharedFiles(source, sharedFiles);
+    public collectSharedFiles(source: string, sharedFiles: string[], options: { resolvedCommit?: string | null } = {}): CollectSharedFilesSuccess | FailureResult {
+        return new BackendSourceService().collectSharedFiles(source, sharedFiles, options);
     }
 
-    public installSkillEntries({ source, skillEntries, agents }: { source: string; skillEntries: unknown[]; agents: string[] }): BackendCommandResult {
-        return new SkillEntryInstaller({ root: this.root }).install({ source, skillEntries, agents });
+    public installSkillEntries({ source, skillEntries, agents, resolvedCommit = null }: { source: string; skillEntries: unknown[]; agents: string[]; resolvedCommit?: string | null }): BackendCommandResult {
+        return new SkillEntryInstaller({ root: this.root }).install({ source, skillEntries, agents, resolvedCommit });
     }
 
     public removeSkillEntries({ skillEntries, agents }: { skillEntries: unknown[]; agents: string[] }): BackendCommandResult {

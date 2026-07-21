@@ -126,7 +126,7 @@ const additionalRules = {
 
 export default defineConfig([
     {
-        ignores: ['node_modules/**', 'dist/**', 'public/build/**', 'assets/vendor/**', 'vendor/**', 'webpack.config.cjs'],
+        ignores: ['node_modules/**', 'dist/**', 'public/build/**', '.agents/skills/**', 'assets/vendor/**', 'vendor/**', 'webpack.config.cjs'],
     },
     {
         ...eslint.configs.recommended,

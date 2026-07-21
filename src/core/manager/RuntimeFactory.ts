@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import path from 'node:path';
 import packageJson from '../../../package.json' with { type: 'json' };
 
@@ -41,8 +42,12 @@ export default class RuntimeFactory {
 
         try {
             const manifestStore = new ManifestStore({ manifestPath, lockPath });
+            const manifestExisted = fs.existsSync(manifestPath);
             const createdTemplates = manifestStore.ensureFiles();
-            if (createdTemplates.length > 0) {
+            const onlyLockWasCreated = manifestExisted
+                && createdTemplates.length === 1
+                && createdTemplates[0] === lockPath;
+            if (createdTemplates.length > 0 && !onlyLockWasCreated) {
                 return {
                     status: 'templates-created',
                     exitCode: 1,

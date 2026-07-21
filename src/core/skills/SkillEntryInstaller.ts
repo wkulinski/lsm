@@ -28,6 +28,7 @@ interface InstallSkillEntriesInput {
     source: string;
     skillEntries: unknown[];
     agents: string[];
+    resolvedCommit?: string | null;
 }
 
 interface RemoveSkillEntriesInput {
@@ -42,7 +43,7 @@ export default class SkillEntryInstaller {
         this.root = root;
     }
 
-    public install({ source, skillEntries, agents }: InstallSkillEntriesInput): BackendCommandResult {
+    public install({ source, skillEntries, agents, resolvedCommit = null }: InstallSkillEntriesInput): BackendCommandResult {
         const dirsResult = this.resolveAgentProjectSkillDirs(agents);
         if (!dirsResult.ok) {
             return {
@@ -76,6 +77,7 @@ export default class SkillEntryInstaller {
         const collected = discovery.collectSkillDirectories(
             source,
             normalizedEntries.map(entry => entry.sourcePath),
+            { resolvedCommit },
         );
         if (!collected.ok) {
             return {

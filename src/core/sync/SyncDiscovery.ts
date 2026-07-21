@@ -3,6 +3,7 @@ import type {
     BackendLike,
     DiscoveredSources,
     FileHashEntry,
+    LockData,
     ManifestData,
     ResolvedSourceMeta,
     SkillEntry,
@@ -24,12 +25,13 @@ export default class SyncDiscovery {
         this.backend = backend;
     }
 
-    public discover(manifest: ManifestData): { discovered: DiscoveredSources; missingRequested: { source: string; skill: string }[] } {
+    public discover(manifest: ManifestData, { update = true, lock }: { update?: boolean; lock?: LockData } = {}): { discovered: DiscoveredSources; missingRequested: { source: string; skill: string }[] } {
         const discovered: DiscoveredSources = {};
         const missingRequested: { source: string; skill: string }[] = [];
 
         manifest.sources.forEach(({ source, skills }) => {
-            const listed = this.listSkillsOrDie(source, skills);
+            const resolvedCommit = update ? null : lock?.sources[source]?.resolved.resolvedCommit ?? null;
+            const listed = this.listSkillsOrDie(source, skills, resolvedCommit);
             const available = listed.skills;
             const aliasMap = listed.aliasMap;
             const listedAt = listed.listedAt;
@@ -72,8 +74,14 @@ export default class SyncDiscovery {
         return { discovered, missingRequested };
     }
 
-    private listSkillsOrDie(source: string, skills: string[] | null): ListedSkillsResult {
-        const listed = this.backend.listSkills(source, { includeInternal: !!(skills && skills.length > 0) });
+    private listSkillsOrDie(source: string, skills: string[] | null, resolvedCommit: string | null): ListedSkillsResult {
+        const options: { includeInternal: boolean; resolvedCommit?: string } = {
+            includeInternal: !!(skills && skills.length > 0),
+        };
+        if (resolvedCommit) {
+            options.resolvedCommit = resolvedCommit;
+        }
+        const listed = this.backend.listSkills(source, options);
         if (listed.ok) {
             return {
                 skills: listed.skills,

@@ -40,12 +40,12 @@ export type BackendVersionResult = BackendVersionSuccess | BackendVersionFailure
 
 export interface BackendLike {
     root: string;
-    listSkills(source: string, options?: { includeInternal?: boolean; fullDepth?: boolean }): ListSkillsSuccess | FailureResult;
+    listSkills(source: string, options?: { includeInternal?: boolean; fullDepth?: boolean; resolvedCommit?: string | null }): ListSkillsSuccess | FailureResult;
     resolveSource(source: string): ResolvedSource | FailureResult;
-    collectSharedFiles(source: string, sharedFiles: string[]): CollectSharedFilesSuccess | FailureResult;
-    collectSkillDirectories?(source: string, skillSourcePaths: string[]): CollectSkillDirectoriesSuccess | FailureResult;
+    collectSharedFiles(source: string, sharedFiles: string[], options?: { resolvedCommit?: string | null }): CollectSharedFilesSuccess | FailureResult;
+    collectSkillDirectories?(source: string, skillSourcePaths: string[], options?: { resolvedCommit?: string | null }): CollectSkillDirectoriesSuccess | FailureResult;
     resolveAgentProjectSkillDirs(agents: string[]): AgentProjectSkillDirsResult;
-    installSkillEntries(input: { source: string; skillEntries: SkillEntry[]; agents: string[] }): BackendCommandResult;
+    installSkillEntries(input: { source: string; skillEntries: SkillEntry[]; agents: string[]; resolvedCommit?: string | null }): BackendCommandResult;
     removeSkillEntries(input: { skillEntries: ManagedSkillEntry[]; agents: string[] }): BackendCommandResult;
     getVersion?(): BackendVersionResult;
 }

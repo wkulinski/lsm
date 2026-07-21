@@ -29,6 +29,7 @@ describe('SyncWorkflow', () => {
 
         const result = await new SyncWorkflow().run({
             runtime,
+            options: { update: true },
             report: event => events.push(event),
         });
 
@@ -71,12 +72,25 @@ describe('SyncWorkflow', () => {
         expect(upstreamLockSource.sharedFileHashes).toEqual([{ path: '.agents/skills/shared/alpha.md', sha256: 'shared-hash' }]);
     });
 
+    test('runs locked sync without writing the lock', async () => {
+        const { runtime, lockWrites } = createRuntime();
+
+        const result = await new SyncWorkflow().run({ runtime });
+
+        expect(result).toMatchObject({
+            status: 'completed',
+            exitCode: 0,
+            lockWritten: false,
+        });
+        expect(lockWrites).toEqual([]);
+    });
+
     test('does not write lock when requested skills are missing', async () => {
         const { runtime, lockWrites } = createRuntime({
             missingRequested: [{ source: 'upstream', skill: 'Missing' }],
         });
 
-        const result = await new SyncWorkflow().run({ runtime });
+        const result = await new SyncWorkflow().run({ runtime, options: { update: true } });
 
         expect(result).toMatchObject({
             status: 'completed',
@@ -95,7 +109,7 @@ describe('SyncWorkflow', () => {
             },
         });
 
-        const result = await new SyncWorkflow().run({ runtime });
+        const result = await new SyncWorkflow().run({ runtime, options: { update: true } });
 
         expect(result).toMatchObject({
             status: 'add-failed',
@@ -115,7 +129,7 @@ describe('SyncWorkflow', () => {
             }),
         });
 
-        const result = await new SyncWorkflow().run({ runtime });
+        const result = await new SyncWorkflow().run({ runtime, options: { update: true } });
 
         expect(result).toMatchObject({
             status: 'shared-failed',
@@ -136,7 +150,7 @@ describe('SyncWorkflow', () => {
             }),
         });
 
-        const result = await new SyncWorkflow().run({ runtime });
+        const result = await new SyncWorkflow().run({ runtime, options: { update: true } });
 
         expect(result).toMatchObject({
             status: 'error',
@@ -156,6 +170,7 @@ describe('SyncWorkflow', () => {
         const result = await new SyncWorkflow().run({
             runtime,
             options: {
+                update: true,
                 confirmLocalChanges: () => false,
             },
         });
@@ -176,6 +191,7 @@ function createRuntime(
         discovered = createDiscoveredSources(),
         missingRequested = [],
         preflight = createPreflight(),
+        lock = createLock(),
         addResult = {
             installs: [{ source: 'upstream', ok: true, status: 0, cmd: ['fake-install'] }],
             addFailed: false,
@@ -186,6 +202,7 @@ function createRuntime(
         discovered?: DiscoveredSources;
         missingRequested?: { source: string; skill: string }[];
         preflight?: SyncPreflight;
+        lock?: LockData;
         addResult?: { installs: SyncInstallResult[]; addFailed: boolean };
         shared?: SharedSyncResult;
         removal?: SyncRemovalSummary;
@@ -194,7 +211,6 @@ function createRuntime(
     const calls: string[] = [];
     const lockWrites: Parameters<ManagerRuntime['manifestStore']['writeLock']>[0][] = [];
     const manifest = createManifest();
-    const lock = createLock();
     const plan = createPlan();
 
     const sync = {
@@ -286,7 +302,27 @@ function createLock(): LockData {
     return {
         schemaVersion: 5,
         agents: ['codex'],
-        sources: {},
+        sources: {
+            upstream: {
+                mode: 'all',
+                listedAt: '2026-06-05T00:00:00.000Z',
+                skillEntries: [{
+                    name: 'Alpha',
+                    sourcePath: '.agents/skills/alpha',
+                    sharedFiles: ['.agents/skills/shared/alpha.md'],
+                    hash: null,
+                }],
+                sharedFileHashes: [],
+                resolved: {
+                    requestedRef: null,
+                    defaultBranch: 'main',
+                    resolvedRef: 'main',
+                    resolvedCommit: 'abc123',
+                    subpath: null,
+                    resolvedAt: '2026-06-05T00:00:00.000Z',
+                },
+            },
+        },
     };
 }
 

@@ -17,6 +17,7 @@ export async function runCli(argv: string[]): Promise<number> {
         .command('sync')
         .description('Synchronize managed skills from manifest sources')
         .option('--manifest <path>', 'Path to skills manifest')
+        .option('--update', 'Resolve current upstream sources and update the lock')
         .option('--force', 'Continue despite local change conflicts')
         .action(async (options: SyncCommandOptions) => {
             exitCode = await runSyncCommand(options);

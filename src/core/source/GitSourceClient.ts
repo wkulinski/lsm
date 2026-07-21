@@ -28,13 +28,13 @@ export default class GitSourceClient {
         this.gitRunner = gitRunner;
     }
 
-    public cloneRepo({ url, ref, depth = null }: { url: string; ref: string | null; depth?: number | null }): CloneRepoSuccess | CloneRepoFailure {
+    public cloneRepo({ url, ref, commit = null, depth = null }: { url: string; ref: string | null; commit?: string | null; depth?: number | null }): CloneRepoSuccess | CloneRepoFailure {
         const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'skills-'));
         const args = ['clone'];
         if (typeof depth === 'number' && Number.isInteger(depth) && depth > 0) {
             args.push('--depth', String(depth));
         }
-        if (ref) {
+        if (ref && !commit) {
             args.push('--branch', ref);
         }
         args.push(url, tempDir);
@@ -49,7 +49,35 @@ export default class GitSourceClient {
             return { ok: false, error: `Git clone failed (exit=${String(res.status)})`, details: res.stderr || res.stdout };
         }
 
+        if (commit) {
+            const checkout = this.checkoutCommit(tempDir, commit);
+            if (!checkout.ok) {
+                this.cleanupTempDir(tempDir);
+                return checkout;
+            }
+        }
+
         return { ok: true, dir: tempDir };
+    }
+
+    private checkoutCommit(tempDir: string, commit: string): CloneRepoFailure | { ok: true } {
+        const runner = this.gitRunner ?? new GitRunner();
+        const fetched = runner.run(tempDir, ['fetch', '--depth', '1', 'origin', commit]);
+        if (!fetched.ok) {
+            return { ok: false, error: `Git fetch failed for commit ${commit} (exit=${String(fetched.status)})`, details: fetched.stderr || fetched.stdout };
+        }
+
+        const checkout = runner.run(tempDir, ['checkout', '--detach', commit]);
+        if (!checkout.ok) {
+            return { ok: false, error: `Git checkout failed for commit ${commit} (exit=${String(checkout.status)})`, details: checkout.stderr || checkout.stdout };
+        }
+
+        const head = this.gitCapture(tempDir, ['rev-parse', 'HEAD']);
+        if (!head.ok || head.stdout.trim() !== commit) {
+            return { ok: false, error: `Git checkout resolved to an unexpected commit; expected ${commit}.`, details: head.stderr || head.stdout };
+        }
+
+        return { ok: true };
     }
 
     public detectDefaultBranch(url: string): string | null {

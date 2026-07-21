@@ -11,6 +11,7 @@ docs/HANDOFF.md
 /.env.local
 /.env.*.local
 /.env
+/var/
 /.agents/skills/*
 !/.agents/skills/llm-skills-manager/
 !/.agents/skills/llm-skills-manager/**

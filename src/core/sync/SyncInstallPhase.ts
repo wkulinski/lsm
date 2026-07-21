@@ -27,6 +27,7 @@ export default class SyncInstallPhase {
                 source,
                 skillEntries: meta.skillEntries,
                 agents,
+                resolvedCommit: meta.resolved.resolvedCommit,
             });
 
             installs.push({ source, ...res });

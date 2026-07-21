@@ -6,6 +6,7 @@ import { renderSyncEvent, renderSyncResult } from '../renderers/syncRenderer';
 export interface SyncCommandOptions {
     manifest?: string;
     force?: boolean;
+    update?: boolean;
 }
 
 export async function runSyncCommand(options: SyncCommandOptions): Promise<number> {
@@ -16,6 +17,7 @@ export async function runSyncCommand(options: SyncCommandOptions): Promise<numbe
 
     const result = await manager.runSync({
         force: options.force === true,
+        update: options.update === true,
         report: renderSyncEvent,
         confirmLocalChanges,
     });

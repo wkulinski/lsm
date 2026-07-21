@@ -34,6 +34,29 @@ describe('SkillsManager sync', () => {
             fs.rmSync(tempDir, { recursive: true, force: true });
         }
     });
+
+    test('requires update when the manifest exists but the lock is missing', async () => {
+        const tempDir = createTempDir();
+
+        try {
+            writeJson(path.join(tempDir, 'skills.json'), {
+                agents: ['codex'],
+                sources: [{ source: 'owner/repo' }],
+            });
+
+            const result = await createManager({ cwd: tempDir }).runSync();
+
+            expect(result).toMatchObject({
+                status: 'error',
+                exitCode: 1,
+                error: 'Lock is empty. Run `lsm sync --update` to resolve sources and update the lock.',
+            });
+            expect(fs.existsSync(path.join(tempDir, 'skills.lock.json'))).toBe(true);
+        }
+        finally {
+            fs.rmSync(tempDir, { recursive: true, force: true });
+        }
+    });
 });
 
 describe('SkillsManager publish', () => {

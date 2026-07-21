@@ -74,6 +74,7 @@ export interface SyncConfirmationRequest {
 
 export interface SyncCommandOptions {
     force?: boolean;
+    update?: boolean;
     report?: Reporter;
     confirmLocalChanges?: (input: SyncConfirmationRequest) => boolean | Promise<boolean>;
 }
@@ -116,6 +117,7 @@ export interface SyncCompletedResult {
     shared: SharedSyncResult;
     removal: SyncRemovalSummary;
     lockWritten: boolean;
+    lockMode?: 'locked' | 'updated';
 }
 
 export type SyncCommandResult

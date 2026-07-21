@@ -65,6 +65,7 @@ export default class SyncSharedFiles {
                 source,
                 skillEntries: meta.skillEntries,
                 agentSkillDirs: dirsResult.dirs,
+                resolvedCommit: meta.resolved.resolvedCommit,
             });
             managedNewLocalPaths[source] = copyResult.managedLocalPaths;
             sharedFileHashesBySource[source] = copyResult.fileHashes;

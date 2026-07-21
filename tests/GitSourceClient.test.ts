@@ -51,6 +51,35 @@ describe('GitSourceClient', () => {
         }
     });
 
+    test('clones and verifies an exact commit without using a branch ref', () => {
+        const calls: { cwd: string | null; args: string[] }[] = [];
+        const commit = 'abc123';
+        const client = new GitSourceClient({
+            gitRunner: {
+                run(cwd, args): ReturnType<GitRunnerLike['run']> {
+                    calls.push({ cwd, args });
+                    if (args[0] === 'rev-parse') {
+                        return { ok: true, status: 0, stdout: `${commit}\n`, stderr: '' };
+                    }
+                    return { ok: true, status: 0, stdout: '', stderr: '' };
+                },
+            },
+        });
+
+        const result = client.cloneRepo({ url: 'https://github.com/owner/repo.git', ref: 'main', commit, depth: 1 });
+
+        expect(result.ok).toBe(true);
+        expect(calls.map(call => call.args)).toEqual([
+            ['clone', '--depth', '1', 'https://github.com/owner/repo.git', expect.any(String)],
+            ['fetch', '--depth', '1', 'origin', commit],
+            ['checkout', '--detach', commit],
+            ['rev-parse', 'HEAD'],
+        ]);
+        if (result.ok) {
+            client.cleanupTempDir(result.dir);
+        }
+    });
+
     test('ignores invalid depth and cleans up failed clones', () => {
         const calls: { cwd: string | null; args: string[] }[] = [];
         const remove = vi.spyOn(fs, 'rmSync');

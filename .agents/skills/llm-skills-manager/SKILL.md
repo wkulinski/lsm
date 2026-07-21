@@ -24,7 +24,8 @@ Ten skill nie implementuje reguł synchronizacji ani publish samodzielnie, tylko
 uruchamia CLI albo deleguje do publicznego API biblioteki.
 
 ## Kiedy użyć
-- Gdy chcesz odświeżyć lokalne skille z upstream (`sync`).
+- Gdy chcesz zainstalować lokalne skille z wersji zapisanych w locku (`sync`).
+- Gdy chcesz odświeżyć lokalne skille z upstream (`sync --update`).
 - Gdy chcesz wypchnąć lokalne zmiany skilli do source (`publish`).
 - Gdy chcesz najpierw zobaczyć plan zmian (`publish --dry-run`).
 - Gdy chcesz dodać, zmienić albo usunąć repozytorium lub wybrane skille w `skills.json`.
@@ -71,12 +72,16 @@ Zmiany w `skills.json` zapisuj i przeglądaj przed uruchomieniem sync:
 
 ```bash
 git diff -- skills.json
-npx --no-install lsm sync
+npx --no-install lsm sync --update
 ```
 
 `sync` nie obsługuje opcji `--dry-run`; dry-run jest dostępny dla `publish`.
+Zwykły `sync` używa commitów i hashy z `skills.lock.json`, nie aktualizuje locka
+i wymaga zgodności manifestu z lockiem. Przy pierwszym uruchomieniu lub po
+zmianie `skills.json` użyj `--update`.
 Sync pokaże plan i zatrzyma się na konfliktach lokalnych; `--force` stosuj tylko
-po świadomym sprawdzeniu planu.
+po świadomym sprawdzeniu planu. `--force` nie omija brakującego lub niezgodnego
+locka.
 
 ## Operacje na `skills.json`
 
@@ -195,10 +200,12 @@ npm install @wkulinski/lsm
 Opcje `sync`:
 
 - `--manifest <path>` używa alternatywnego pliku manifestu.
+- `--update` rozwiązuje aktualny upstream i zapisuje nowy lock.
 - `--force` kontynuuje mimo lokalnych konfliktów nadpisania/usunięcia.
 
 1. Synchronizacja z upstream:
    - `npx --no-install lsm sync`
+   - `npx --no-install lsm sync --update` (pierwsza synchronizacja lub aktualizacja upstreamu)
    - `npx --no-install lsm sync --force` (gdy chcesz pominąć guard lokalnych zmian)
 2. Dry-run publish (bez commita i pusha):
    - `npx --no-install lsm publish --dry-run --source <source>`
@@ -239,7 +246,7 @@ const manager = createManager({
   lockPath: './skills.lock.json',
 });
 
-const syncResult = await manager.runSync();
+const syncResult = await manager.runSync({ update: true });
 const publishResult = await manager.runPublish({
   source: 'owner/repo',
   dryRun: true,

@@ -19,7 +19,7 @@ export default class SkillDiscovery {
     public skillFrontmatterParser: SkillFrontmatterParser;
     public skillScanner: SkillScanner;
     public sharedFileCollector: SharedFileCollector;
-    public gitSourceClient: GitSourceClient;
+    public gitSourceClient: Pick<GitSourceClient, 'cloneRepo' | 'detectDefaultBranch' | 'gitCapture' | 'cleanupTempDir'>;
 
     public constructor({ includeInternal = false, fullDepth = false }: { includeInternal?: boolean; fullDepth?: boolean } = {}) {
         const skipDirs = new Set([
@@ -44,14 +44,20 @@ export default class SkillDiscovery {
         return this.sourceResolver.resolve(source);
     }
 
-    public listSkills(source: string): ListSkillsSuccess | FailureResult {
+    public listSkills(source: string, options: { resolvedCommit?: string | null } = {}): ListSkillsSuccess | FailureResult {
         const resolved = this.resolveSource(source);
         if (!resolved.ok) {
             return { ok: false, error: resolved.error };
         }
 
         const defaultBranch = this.gitSourceClient.detectDefaultBranch(resolved.url);
-        const clone = this.gitSourceClient.cloneRepo({ url: resolved.url, ref: resolved.ref, depth: 1 });
+        const resolvedCommit = options.resolvedCommit ?? null;
+        const clone = this.gitSourceClient.cloneRepo({
+            url: resolved.url,
+            ref: resolvedCommit ? null : resolved.ref,
+            commit: resolvedCommit,
+            depth: 1,
+        });
         if (!clone.ok) {
             return { ok: false, error: clone.error, details: clone.details };
         }
@@ -68,7 +74,7 @@ export default class SkillDiscovery {
             const catalog = this.skillCatalogBuilder.build(clone.dir, skills);
 
             const resolvedCommitResult = this.gitSourceClient.gitCapture(clone.dir, ['rev-parse', 'HEAD']);
-            const resolvedCommit = resolvedCommitResult.ok ? resolvedCommitResult.stdout.trim() : null;
+            const discoveredCommit = resolvedCommitResult.ok ? resolvedCommitResult.stdout.trim() : null;
             const currentBranchResult = this.gitSourceClient.gitCapture(clone.dir, ['rev-parse', '--abbrev-ref', 'HEAD']);
             const currentBranch = currentBranchResult.ok ? currentBranchResult.stdout.trim() : null;
             const resolvedRef = resolved.ref
@@ -84,7 +90,7 @@ export default class SkillDiscovery {
                     requestedRef: resolved.ref ?? null,
                     defaultBranch,
                     resolvedRef,
-                    resolvedCommit,
+                    resolvedCommit: discoveredCommit,
                     subpath: resolved.subpath ?? null,
                     resolvedAt: new Date().toISOString(),
                 },
@@ -95,13 +101,19 @@ export default class SkillDiscovery {
         }
     }
 
-    public collectSharedFiles(source: string, sharedFiles: string[]): CollectSharedFilesSuccess | FailureResult {
+    public collectSharedFiles(source: string, sharedFiles: string[], options: { resolvedCommit?: string | null } = {}): CollectSharedFilesSuccess | FailureResult {
         const resolved = this.resolveSource(source);
         if (!resolved.ok) {
             return { ok: false, error: resolved.error };
         }
 
-        const clone = this.gitSourceClient.cloneRepo({ url: resolved.url, ref: resolved.ref, depth: 1 });
+        const resolvedCommit = options.resolvedCommit ?? null;
+        const clone = this.gitSourceClient.cloneRepo({
+            url: resolved.url,
+            ref: resolvedCommit ? null : resolved.ref,
+            commit: resolvedCommit,
+            depth: 1,
+        });
         if (!clone.ok) {
             return { ok: false, error: clone.error, details: clone.details };
         }
@@ -114,13 +126,19 @@ export default class SkillDiscovery {
         }
     }
 
-    public collectSkillDirectories(source: string, skillSourcePaths: string[]): CollectSkillDirectoriesSuccess | FailureResult {
+    public collectSkillDirectories(source: string, skillSourcePaths: string[], options: { resolvedCommit?: string | null } = {}): CollectSkillDirectoriesSuccess | FailureResult {
         const resolved = this.resolveSource(source);
         if (!resolved.ok) {
             return { ok: false, error: resolved.error };
         }
 
-        const clone = this.gitSourceClient.cloneRepo({ url: resolved.url, ref: resolved.ref, depth: 1 });
+        const resolvedCommit = options.resolvedCommit ?? null;
+        const clone = this.gitSourceClient.cloneRepo({
+            url: resolved.url,
+            ref: resolvedCommit ? null : resolved.ref,
+            commit: resolvedCommit,
+            depth: 1,
+        });
         if (!clone.ok) {
             return { ok: false, error: clone.error, details: clone.details };
         }

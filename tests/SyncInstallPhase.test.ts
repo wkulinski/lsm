@@ -42,8 +42,8 @@ describe('SyncInstallPhase', () => {
             addFailed: false,
         });
         expect(backend.installed).toEqual([
-            { source: 'upstream', skillEntries: [alpha], agents: ['codex', 'cursor'] },
-            { source: 'fork', skillEntries: [beta], agents: ['codex', 'cursor'] },
+            { source: 'upstream', skillEntries: [alpha], agents: ['codex', 'cursor'], resolvedCommit: 'abc123' },
+            { source: 'fork', skillEntries: [beta], agents: ['codex', 'cursor'], resolvedCommit: 'abc123' },
         ]);
     });
 

@@ -30,10 +30,11 @@ describe('CLI command handlers', () => {
         const runSync = vi.fn<(options: CoreSyncCommandOptions) => Promise<SyncCommandResult>>(() => Promise.resolve({ status: 'cancelled', exitCode: 1 } as SyncCommandResult));
         mockedCreateManager.mockReturnValue({ runSync } as unknown as ReturnType<typeof createManager>);
 
-        await expect(runSyncCommand({ manifest: 'custom.json', force: true })).resolves.toBe(1);
+        await expect(runSyncCommand({ manifest: 'custom.json', force: true, update: true })).resolves.toBe(1);
 
         const options = runSync.mock.calls[0][0];
         expect(options.force).toBe(true);
+        expect(options.update).toBe(true);
         expect(typeof options.report).toBe('function');
         expect(typeof options.confirmLocalChanges).toBe('function');
     });

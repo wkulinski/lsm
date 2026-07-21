@@ -9,6 +9,7 @@ import type {
 export interface BackendSourceListSkillsOptions {
     includeInternal?: boolean;
     fullDepth?: boolean;
+    resolvedCommit?: string | null;
 }
 
 export type BackendSourceDiscovery = Pick<SkillDiscovery, 'listSkills' | 'resolveSource' | 'collectSharedFiles'>;
@@ -28,14 +29,14 @@ export default class BackendSourceService {
             includeInternal: options.includeInternal ?? false,
             fullDepth: options.fullDepth ?? false,
         });
-        return discovery.listSkills(source);
+        return discovery.listSkills(source, { resolvedCommit: options.resolvedCommit ?? null });
     }
 
     public resolveSource(source: string): ResolvedSource | FailureResult {
         return this.createDiscovery().resolveSource(source);
     }
 
-    public collectSharedFiles(source: string, sharedFiles: string[]): CollectSharedFilesSuccess | FailureResult {
-        return this.createDiscovery().collectSharedFiles(source, sharedFiles);
+    public collectSharedFiles(source: string, sharedFiles: string[], options: { resolvedCommit?: string | null } = {}): CollectSharedFilesSuccess | FailureResult {
+        return this.createDiscovery().collectSharedFiles(source, sharedFiles, options);
     }
 }

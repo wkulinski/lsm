@@ -67,7 +67,7 @@ export function renderSyncResult(result: SyncCommandResult): number {
             printSharedSummary(result);
             printMissingRequested(result.missingRequested);
             printInstallSummary(result.installs);
-            printLockOutcome(result.lockWritten, result.header.lockRelativePath);
+            printLockOutcome(result.lockWritten, result.header.lockRelativePath, result.lockMode);
             return result.exitCode;
     }
 
@@ -197,8 +197,12 @@ function printInstallSummary(installs: SyncInstallResult[]): void {
     });
 }
 
-function printLockOutcome(lockWritten: boolean, lockRelativePath: string): void {
+function printLockOutcome(lockWritten: boolean, lockRelativePath: string, lockMode?: 'locked' | 'updated'): void {
     if (!lockWritten) {
+        if (lockMode === 'locked') {
+            process.stdout.write('\nLock unchanged (locked sync used the existing state).\n');
+            return;
+        }
         process.stdout.write('\nLock NOT updated (because installs failed or missing skills were pruned).\n');
         return;
     }

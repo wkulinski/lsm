@@ -32,8 +32,8 @@ export default class SyncAdapter {
         this.manifestStore = manifestStore;
     }
 
-    public discover(manifest: ManifestData): { discovered: DiscoveredSources; missingRequested: { source: string; skill: string }[] } {
-        return new SyncDiscovery({ backend: this.backend }).discover(manifest);
+    public discover(manifest: ManifestData, options: { update?: boolean; lock?: LockData } = {}): { discovered: DiscoveredSources; missingRequested: { source: string; skill: string }[] } {
+        return new SyncDiscovery({ backend: this.backend }).discover(manifest, options);
     }
 
     public assertNoConflicts(discovered: DiscoveredSources): void {

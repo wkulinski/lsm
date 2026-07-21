@@ -30,11 +30,12 @@ Jeżeli pliki nie istnieją, narzędzie utworzy ich szablony przy pierwszym uruc
 ### `skills.json` i `skills.lock.json`
 
 - `skills.json` opisuje oczekiwany stan: z jakich źródeł chcesz pobierać skille i dla jakich agentów.
-- `skills.lock.json` zapisuje ostatni poprawnie zsynchronizowany stan źródeł.
-- `sync` czyta oba pliki: bierze konfigurację z `skills.json` i aktualizuje `skills.lock.json` po udanej synchronizacji.
+- `skills.lock.json` zapisuje ostatni poprawnie zsynchronizowany stan źródeł, w tym dokładne commity i hashe treści.
+- `sync` działa w trybie locked: używa commitów z `skills.lock.json` i nie aktualizuje locka.
+- `sync --update` rozwiązuje źródła ponownie, pobiera aktualny upstream i aktualizuje lock po udanej synchronizacji.
 - `publish` korzysta z `skills.lock.json`, żeby wiedzieć, względem jakiego stanu upstream przygotować publikację zmian.
 
-W praktyce: edytujesz `skills.json`, uruchamiasz `sync`, a `skills.lock.json` jest aktualizowany automatycznie przez narzędzie.
+Przy pierwszym uruchomieniu oraz po zmianie `skills.json` użyj `sync --update`.
 
 Przykładowy `skills.json`:
 
@@ -57,6 +58,7 @@ Synchronizuje stan lokalny z manifestem i źródłami upstream.
 
 Opcje:
 - `--manifest <path>`: ścieżka do alternatywnego pliku manifestu
+- `--update`: pobierz aktualny upstream i zaktualizuj `skills.lock.json`
 - `--force`: kontynuuj mimo wykrytych lokalnych konfliktów zmian
 
 Przykłady:
@@ -66,12 +68,19 @@ node bin/lsm sync
 ```
 
 ```bash
+node bin/lsm sync --update
+```
+
+```bash
 node bin/lsm sync --manifest ./config/skills.json
 ```
 
 ```bash
 node bin/lsm sync --force
 ```
+
+Zwykłe `sync` kończy się błędem, gdy lock jest pusty, niezgodny z manifestem
+albo nie zawiera wymaganego commita. `--force` nie omija tej walidacji.
 
 ### `publish`
 
