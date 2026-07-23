@@ -58,7 +58,7 @@ describe('CLI command handlers', () => {
 
             expect(confirmation).toBeDefined();
             expect(() => confirmation?.({} as SyncConfirmationRequest)).toThrow(
-                'Sync aborted: local change conflicts detected in non-interactive mode.',
+                'Standard sync cannot continue because local changes were detected in managed files.',
             );
         }
         finally {

@@ -98,6 +98,8 @@ function printSyncPlan(plan: SyncPlan): void {
 
 function printPreflight(preflight: SyncPreflight, force: boolean): void {
     process.stdout.write('\n-- Local change guard --\n');
+    process.stdout.write('Standard sync cannot continue because local changes were detected in managed files.\n');
+    process.stdout.write('The affected files differ from the version recorded in skills.lock.json. If these changes were already published upstream, re-run with --update to resolve the current upstream and refresh the lock.\n');
     process.stdout.write(`Detected potential overwrite/delete conflicts: ${String(preflight.conflicts.length)}\n`);
     preflight.conflicts.forEach((conflict) => {
         const operation = conflict.operation === 'delete' ? 'delete' : 'overwrite';

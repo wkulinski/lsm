@@ -27,7 +27,7 @@ export async function runSyncCommand(options: SyncCommandOptions): Promise<numbe
 
 function confirmLocalChanges(): boolean {
     if (!process.stdin.isTTY || !process.stdout.isTTY) {
-        throw new Error('Sync aborted: local change conflicts detected in non-interactive mode.\nRe-run with --force to continue anyway.');
+        throw new Error('Standard sync cannot continue because local changes were detected in managed files.\nThe files differ from the version recorded in skills.lock.json. If these changes were already published upstream, re-run with --update; otherwise review the changes or use --force to overwrite them.');
     }
 
     return askYesNo('Continue sync and overwrite/delete these paths? [y/N] ');
