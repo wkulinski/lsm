@@ -22,9 +22,14 @@ export type {
     SharedFileContentEntry,
     SkillDefinition,
     SkillDirectoryFile,
+    SubagentDefinition,
+    SubagentDiscoverySuccess,
+    SourceDiscoverySuccess,
 } from './discovery';
 export type {
     FileHashEntry,
+    ManagedFileHash,
+    ManagedFileHashEntry,
     LockData,
     LockSourceMeta,
     ManifestData,
@@ -33,6 +38,8 @@ export type {
     ResolvedSourceMeta,
     SkillEntry,
     SkillTreeHash,
+    SharedEntry,
+    SubagentEntry,
 } from './manifest';
 export type { ManagerEvent } from './events';
 export type { ManagerErrorResult, ManagerHeader, ManagerTemplatesCreatedResult } from './manager';
@@ -53,4 +60,6 @@ export type {
     SyncPreflightConflict,
     SyncRemovalSummary,
     SyncSharedFailedResult,
+    SubagentSyncResult,
+    SyncSubagentFailedResult,
 } from './sync';

@@ -11,6 +11,8 @@ export interface PublishErrorResult {
     compareUrl?: string | null;
 }
 
+export const SUBAGENT_PUBLISH_UNSUPPORTED_ERROR = 'Publish currently supports skills only; subagents are sync-only.';
+
 export interface ResolvedTargetSourceSuccess {
     ok: true;
     source: string;
@@ -40,6 +42,13 @@ export default class PublishParameterResolver {
         removeSkills: string[];
         createPr: boolean | null;
     }): ResolvePublishParametersSuccess | PublishErrorResult {
+        if (manifest.agents.length === 0 && (manifest.subagents?.length ?? 0) > 0) {
+            return {
+                ok: false,
+                error: SUBAGENT_PUBLISH_UNSUPPORTED_ERROR,
+            };
+        }
+
         const targetSource = this.resolveTargetSource(manifest, source);
         if (!targetSource.ok) {
             return targetSource;

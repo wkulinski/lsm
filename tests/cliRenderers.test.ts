@@ -229,6 +229,7 @@ describe('sync renderer', () => {
             { type: 'sync-add-start' },
             { type: 'sync-add-source', source: 'owner/repo', mode: 'all', skillCount: 2 },
             { type: 'sync-shared-start' },
+            { type: 'sync-subagents', detected: 3, installed: 2, removed: 1, sharedFiles: 4 },
             { type: 'sync-remove-start', plan },
             { type: 'publish-start', options: { source: null, newSkills: [], removeSkills: [], dryRun: false, confirmDeletes: false, createPr: null } },
         ];
@@ -242,6 +243,7 @@ describe('sync renderer', () => {
         expect(output.stdout).toContain('Continuing because --force was provided.');
         expect(output.stdout).toContain('>>> Source: owner/repo');
         expect(output.stdout).toContain('-- Syncing shared files');
+        expect(output.stdout).toContain('-- Syncing OpenCode subagents --');
         expect(output.stdout).toContain('-- Pruning removed/missing skills');
     });
 
@@ -267,6 +269,23 @@ describe('sync renderer', () => {
                 shared: { ...shared, errors: [{ source: 'owner/repo', message: 'Shared failed', details: [{ filePath: 'a', a: 'one', b: 'two' }] }] },
             },
             {
+                status: 'subagent-failed',
+                exitCode: 1,
+                header,
+                plan,
+                preflight,
+                installs,
+                shared,
+                subagents: {
+                    subagentFailed: true,
+                    detected: 2,
+                    installed: 1,
+                    removed: 0,
+                    sharedFiles: 1,
+                    errors: [{ source: 'owner/repo', message: 'Subagent failed' }],
+                },
+            },
+            {
                 status: 'completed',
                 exitCode: 0,
                 header,
@@ -275,6 +294,7 @@ describe('sync renderer', () => {
                 missingRequested: [{ source: 'owner/repo', skill: 'missing' }],
                 installs,
                 shared: { ...shared, sharedStats: {}, managedNewLocalPaths: {} },
+                subagents: { subagentFailed: false, detected: 2, installed: 2, removed: 1, sharedFiles: 1, errors: [] },
                 removal: { removedFromRemovedAgents: 0, prunedSkills: 1, removedAgents: [], agentsUnion: ['codex'], hadNothingToPrune: false },
                 lockWritten: true,
             },
@@ -287,6 +307,8 @@ describe('sync renderer', () => {
         expect(output.stdout).toContain('Sync cancelled.');
         expect(output.stdout).toContain('Aborting before removals because installs failed.');
         expect(output.stdout).toContain('Aborting before removals because shared file sync failed.');
+        expect(output.stdout).toContain('Aborting before removals because subagent sync failed.');
+        expect(output.stdout).toContain('Detected : 2');
         expect(output.stdout).toContain('== Shared files summary ==');
         expect(output.stdout).toContain('owner/repo: "missing"');
         expect(output.stdout).toContain('Lock updated: skills.lock.json');
@@ -310,6 +332,7 @@ describe('sync renderer', () => {
         });
 
         expect(output.stdout).toContain('No shared files declared.');
+        expect(output.stdout).not.toContain('== Subagents summary ==');
         expect(output.stdout).toContain('OK  : 0/0');
         expect(output.stdout).toContain('Lock NOT updated');
     });

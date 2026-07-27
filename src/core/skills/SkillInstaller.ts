@@ -2,10 +2,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import Helpers from '../shared/Helpers';
+import { syncExecutableBit } from '../filesystem/FilePermissions';
 
 interface SkillInstallerFileEntry {
     path: string;
     content: Buffer | string;
+    executable: boolean;
 }
 
 export default class SkillInstaller {
@@ -26,6 +28,7 @@ export default class SkillInstaller {
             }
 
             fs.writeFileSync(destinationPath, fileEntry.content);
+            syncExecutableBit(destinationPath, fileEntry.executable);
         });
     }
 

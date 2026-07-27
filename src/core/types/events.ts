@@ -10,6 +10,7 @@ export type ManagerEvent
         | { type: 'sync-add-start' }
         | { type: 'sync-add-source'; source: string; mode: string; skillCount: number }
         | { type: 'sync-shared-start' }
+        | { type: 'sync-subagents'; detected: number; installed: number; removed: number; sharedFiles: number }
         | { type: 'sync-remove-start'; plan: SyncPlan }
         | { type: 'publish-start'; options: Required<Pick<PublishCommandOptions, 'dryRun' | 'confirmDeletes'>> & {
             source: string | null;

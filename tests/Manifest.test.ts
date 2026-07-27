@@ -64,9 +64,11 @@ describe('Manifest', () => {
 
             expect(store.loadManifest()).toEqual({
                 agents: ['codex', 'cursor'],
+                subagents: [],
                 sources: [{
                     source: 'owner/repo',
                     skills: ['alpha', 'beta'],
+                    subagents: null,
                     publish: {
                         branchPrefix: 'publish',
                         createPr: false,
@@ -76,6 +78,7 @@ describe('Manifest', () => {
             expect(store.loadLock()).toEqual({
                 schemaVersion: 5,
                 agents: ['codex', 'cursor'],
+                subagents: [],
                 sources: {
                     upstream: {
                         mode: 'all',
@@ -95,6 +98,21 @@ describe('Manifest', () => {
                         sharedFileHashes: [
                             { path: 'shared/a.md', sha256: 'shared-a' },
                             { path: 'shared/z.md', sha256: 'shared-z' },
+                        ],
+                        subagentEntries: [],
+                        sharedEntries: [
+                            {
+                                sourcePath: 'shared/a.md',
+                                targetPath: 'shared/a.md',
+                                hash: { sha256: 'shared-a', executable: false },
+                                owners: ['skill:Alpha'],
+                            },
+                            {
+                                sourcePath: 'shared/z.md',
+                                targetPath: 'shared/z.md',
+                                hash: { sha256: 'shared-z', executable: false },
+                                owners: ['skill:Alpha'],
+                            },
                         ],
                         resolved: {
                             requestedRef: 'main',

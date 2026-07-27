@@ -55,9 +55,11 @@ describe('manager integration', () => {
             expect(fs.readFileSync(path.join(workspaceDir, '.agents', 'skills', 'shared', 'config.json'), 'utf8')).toBe('{"enabled":true}\n');
 
             const lock = JSON.parse(fs.readFileSync(path.join(workspaceDir, 'skills.lock.json'), 'utf8')) as {
+                schemaVersion: number;
                 agents: string[];
                 sources: { [key: string]: { skillEntries: { name: string; sourcePath: string; sharedFiles: string[] }[] } };
             };
+            expect(lock.schemaVersion).toBe(6);
             expect(lock.agents).toEqual(['codex']);
             expect(lock.sources[sourceName].skillEntries).toMatchObject([{
                 name: 'Example',
@@ -213,14 +215,14 @@ describe('manager integration', () => {
                 sources: {
                     [key: string]: {
                         skillEntries: { hash: { treeSha256: string } }[];
-                        sharedFileHashes: { path: string; sha256: string }[];
+                        sharedEntries: { targetPath: string; hash: { sha256: string } }[];
                     };
                 };
             };
             expect(lock.sources[sourceName].skillEntries[0].hash.treeSha256).toEqual(expect.any(String));
-            expect(lock.sources[sourceName].sharedFileHashes).toHaveLength(1);
-            expect(lock.sources[sourceName].sharedFileHashes[0].path).toBe('.agents/skills/shared/config.json');
-            expect(lock.sources[sourceName].sharedFileHashes[0].sha256).toEqual(expect.any(String));
+            expect(lock.sources[sourceName].sharedEntries).toHaveLength(1);
+            expect(lock.sources[sourceName].sharedEntries[0].targetPath).toBe('.agents/skills/shared/config.json');
+            expect(lock.sources[sourceName].sharedEntries[0].hash.sha256).toEqual(expect.any(String));
         }
         finally {
             fs.rmSync(root, { recursive: true, force: true });

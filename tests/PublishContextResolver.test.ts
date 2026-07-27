@@ -66,6 +66,45 @@ describe('PublishContextResolver', () => {
         });
     });
 
+    test('keeps mixed manifests limited to skill files in the publish plan', () => {
+        const tempDir = createTempDir();
+        const lockSource = createLockSource({
+            skillEntries: [createSkillEntry({ name: 'Alpha', sourcePath: '.agents/skills/alpha' })],
+        });
+        const lock = createLock({ sources: { upstream: lockSource } });
+        const resolver = createResolver({
+            root: tempDir,
+            lock,
+            localSkills: [createLocalSkill(tempDir, { name: 'Alpha', sourcePath: '.agents/skills/alpha' })],
+        });
+
+        const result = resolver.prepare({
+            manifest: { ...createManifest(), subagents: ['opencode'] },
+            lock,
+            targetSource: { ok: true, source: 'upstream', sourceEntry: createManifest().sources[0] },
+            selectedNewSkills: [],
+            selectedRemoveSkills: [],
+            effectiveCreatePr: true,
+            dryRun: false,
+            confirmDeletes: false,
+        });
+
+        expect(result).toMatchObject({
+            ok: true,
+            context: {
+                plan: {
+                    items: [{
+                        type: 'directory',
+                        targetPath: '.agents/skills/alpha',
+                    }],
+                },
+            },
+        });
+        if (result.ok && 'context' in result && result.context) {
+            expect(result.context.plan.items.some(item => item.targetPath.includes('.opencode'))).toBe(false);
+        }
+    });
+
     test('returns noop result when managed skills are missing without explicit removal', () => {
         const tempDir = createTempDir();
         const lockSource = createLockSource({

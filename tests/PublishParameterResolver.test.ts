@@ -4,6 +4,36 @@ import PublishParameterResolver from '../src/core/publish/PublishParameterResolv
 import type { ManifestData } from '../src/core/types';
 
 describe('PublishParameterResolver', () => {
+    test('rejects a subagent-only manifest before resolving a source', () => {
+        const resolver = new PublishParameterResolver();
+
+        expect(resolver.resolve({
+            manifest: { agents: [], subagents: ['opencode'], sources: [] },
+            source: null,
+            newSkills: [],
+            removeSkills: [],
+            createPr: null,
+        })).toEqual({
+            ok: false,
+            error: 'Publish currently supports skills only; subagents are sync-only.',
+        });
+    });
+
+    test('keeps mixed manifests on the skill-only publish path', () => {
+        const resolver = new PublishParameterResolver();
+
+        expect(resolver.resolve({
+            manifest: { ...createManifest(), subagents: ['opencode'] },
+            source: 'owner/repo-a',
+            newSkills: [],
+            removeSkills: [],
+            createPr: null,
+        })).toMatchObject({
+            ok: true,
+            targetSource: { source: 'owner/repo-a' },
+        });
+    });
+
     test('resolves explicit source and normalizes selected skills', () => {
         const resolver = new PublishParameterResolver();
 

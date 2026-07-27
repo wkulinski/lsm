@@ -57,6 +57,13 @@ describe('lockSourcesFromDiscovered', () => {
                     },
                 }],
                 sharedFileHashes: [{ path: '.agents/skills/shared/alpha.md', sha256: 'shared-hash' }],
+                subagentEntries: [],
+                sharedEntries: [{
+                    sourcePath: '.agents/skills/shared/alpha.md',
+                    targetPath: '.agents/skills/shared/alpha.md',
+                    hash: { sha256: 'shared-hash', executable: false },
+                    owners: ['skill:Alpha'],
+                }],
                 resolved,
             },
             fork: {
@@ -69,6 +76,8 @@ describe('lockSourcesFromDiscovered', () => {
                     hash: null,
                 }],
                 sharedFileHashes: [],
+                subagentEntries: [],
+                sharedEntries: [],
                 resolved,
             },
         });

@@ -1,5 +1,5 @@
 import type { ManagedSkillEntry } from './sync';
-import type { CollectSharedFilesSuccess, CollectSkillDirectoriesSuccess, FailureResult, ListSkillsSuccess, ResolvedSource } from './discovery';
+import type { CollectSharedFilesSuccess, CollectSkillDirectoriesSuccess, FailureResult, ListSkillsSuccess, ResolvedSource, SourceDiscoverySuccess } from './discovery';
 import type { SkillEntry } from './manifest';
 
 export type AgentProjectSkillDirsResult
@@ -41,6 +41,13 @@ export type BackendVersionResult = BackendVersionSuccess | BackendVersionFailure
 export interface BackendLike {
     root: string;
     listSkills(source: string, options?: { includeInternal?: boolean; fullDepth?: boolean; resolvedCommit?: string | null }): ListSkillsSuccess | FailureResult;
+    discoverSource?(source: string, options?: {
+        skills?: string[] | null;
+        subagents?: string[] | null;
+        mode?: 'update' | 'locked';
+        resolvedCommit?: string | null;
+        lockedSubagentEntries?: import('./manifest').SubagentEntry[];
+    }): SourceDiscoverySuccess | FailureResult;
     resolveSource(source: string): ResolvedSource | FailureResult;
     collectSharedFiles(source: string, sharedFiles: string[], options?: { resolvedCommit?: string | null }): CollectSharedFilesSuccess | FailureResult;
     collectSkillDirectories?(source: string, skillSourcePaths: string[], options?: { resolvedCommit?: string | null }): CollectSkillDirectoriesSuccess | FailureResult;

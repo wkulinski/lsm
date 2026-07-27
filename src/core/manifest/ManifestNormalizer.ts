@@ -12,16 +12,21 @@ export default class ManifestNormalizer {
 
     public normalize(json: unknown): ManifestData {
         const record = json as UnknownRecord;
-        this.ensureNonEmptyStringArray('agents', record.agents);
+        const agents = this.normalizeStringArray('agents', record.agents, { allowEmpty: true, allowUndefined: true });
+        const subagents = this.normalizeSubagentTargets(record.subagents);
+        if (agents.length === 0 && subagents.length === 0) {
+            Helpers.die(`"${this.manifestFileName}": at least one of "agents" or "subagents" must be non-empty`);
+        }
 
         const sources = record.sources ?? [];
         if (!Array.isArray(sources)) {
             Helpers.die(`"${this.manifestFileName}": "sources" must be an array`);
         }
         if (sources.length === 0) {
-            return { agents: Helpers.sortUniq((record.agents as string[]).map((x: string) => x.trim())), sources: [] };
+            return { agents, subagents, sources: [] };
         }
 
+        const normalizedSources = new Set<string>();
         const normalized = sources.map((sourceEntry: unknown) => {
             if (!sourceEntry || typeof sourceEntry !== 'object' || Array.isArray(sourceEntry)) {
                 Helpers.die(`"${this.manifestFileName}": each source entry must be an object`);
@@ -31,6 +36,11 @@ export default class ManifestNormalizer {
             if (typeof e.source !== 'string' || !e.source.trim()) {
                 Helpers.die(`"${this.manifestFileName}": each source entry needs {"source": "..."}`);
             }
+            const source = e.source.trim();
+            if (normalizedSources.has(source)) {
+                Helpers.die(`"${this.manifestFileName}": duplicate source "${source}"`);
+            }
+            normalizedSources.add(source);
 
             const hasSkills = Object.hasOwn(e, 'skills');
             if (hasSkills && !Array.isArray(e.skills)) {
@@ -49,13 +59,7 @@ export default class ManifestNormalizer {
             const skills = Array.isArray(e.skills)
                 ? Helpers.sortUniq((e.skills as unknown[]).map(x => String(x).trim()).filter(Boolean))
                 : null;
-            if (skills) {
-                skills.forEach((skill) => {
-                    if (!skill) {
-                        Helpers.die(`"${this.manifestFileName}": "skills" contains empty value`);
-                    }
-                });
-            }
+            const subagentSelection = this.normalizeSourceSubagents(e.subagents);
 
             const publish = hasPublish
                 ? this.normalizeManifestPublish(e.publish as UnknownRecord)
@@ -64,21 +68,54 @@ export default class ManifestNormalizer {
                     createPr: null,
                 };
 
-            return { source: e.source.trim(), skills, publish };
+            return { source, skills, subagents: subagentSelection, publish };
         });
 
-        return { agents: Helpers.sortUniq((record.agents as string[]).map((x: string) => x.trim())), sources: normalized };
+        return { agents, subagents, sources: normalized };
     }
 
     public ensureNonEmptyStringArray(name: string, value: unknown): void {
-        if (!Array.isArray(value) || value.length === 0) {
-            Helpers.die(`"${name}" must be a non-empty array`);
+        this.normalizeStringArray(name, value, { allowEmpty: false });
+    }
+
+    private normalizeStringArray(
+        name: string,
+        value: unknown,
+        { allowEmpty = false, allowUndefined = false }: { allowEmpty?: boolean; allowUndefined?: boolean } = {},
+    ): string[] {
+        if (typeof value === 'undefined' && allowUndefined) {
+            return [];
         }
-        value.forEach((x: unknown) => {
+        if (!Array.isArray(value) || (!allowEmpty && value.length === 0)) {
+            Helpers.die(`"${name}" must be ${allowEmpty ? 'an array' : 'a non-empty array'}`);
+        }
+        const normalized = value.map((x: unknown) => {
             if (typeof x !== 'string' || !x.trim()) {
                 Helpers.die(`"${name}" contains empty/non-string value`);
             }
+            return x.trim();
         });
+        return Helpers.sortUniq(normalized);
+    }
+
+    private normalizeSubagentTargets(value: unknown): string[] {
+        if (value === null || typeof value === 'undefined') {
+            return [];
+        }
+        const targets = this.normalizeStringArray('subagents', value, { allowEmpty: true });
+        targets.forEach((target) => {
+            if (target !== 'opencode') {
+                Helpers.die(`"${this.manifestFileName}": unsupported subagent target "${target}"; expected "opencode"`);
+            }
+        });
+        return targets;
+    }
+
+    private normalizeSourceSubagents(value: unknown): string[] | null {
+        if (value === null || typeof value === 'undefined') {
+            return null;
+        }
+        return this.normalizeStringArray('subagents', value, { allowEmpty: true });
     }
 
     public normalizeManifestPublish(publish: UnknownRecord): { branchPrefix: string | null; createPr: boolean | null } {

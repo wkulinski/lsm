@@ -7,15 +7,21 @@ import type {
     ManifestData,
     ResolvedSourceMeta,
     SkillEntry,
+    ManagedFileHashEntry,
+    SourceDiscoverySuccess,
+    SubagentEntry,
 } from '../types';
 
 interface ListedSkillsResult {
     skills: string[];
     skillEntries: SkillEntry[];
     sharedFileHashes: FileHashEntry[];
+    managedSharedFileHashes?: ManagedFileHashEntry[];
     aliasMap: Map<string, string>;
     listedAt: string;
     resolved: ResolvedSourceMeta;
+    subagents: SourceDiscoverySuccess['subagents'];
+    subagentSharedFiles: SourceDiscoverySuccess['subagentSharedFiles'];
 }
 
 export default class SyncDiscovery {
@@ -29,15 +35,29 @@ export default class SyncDiscovery {
         const discovered: DiscoveredSources = {};
         const missingRequested: { source: string; skill: string }[] = [];
 
-        manifest.sources.forEach(({ source, skills }) => {
+        manifest.sources.forEach(({ source, skills, subagents }) => {
             const resolvedCommit = update ? null : lock?.sources[source]?.resolved.resolvedCommit ?? null;
-            const listed = this.listSkillsOrDie(source, skills, resolvedCommit);
+            const activeSubagentSelection = (manifest.subagents ?? []).length > 0 ? subagents : [];
+            const lockedSubagentEntries = lock?.sources[source]?.subagentEntries ?? [];
+            const listed = this.listSourceOrDie({
+                source,
+                skills,
+                subagents: activeSubagentSelection ?? null,
+                mode: update ? 'update' : 'locked',
+                resolvedCommit,
+                lockedSubagentEntries,
+            });
             const available = listed.skills;
             const aliasMap = listed.aliasMap;
             const listedAt = listed.listedAt;
             const skillEntries = listed.skillEntries;
             const sharedFileHashes = listed.sharedFileHashes;
+            const managedSharedFileHashes = listed.managedSharedFileHashes;
+            const skillSharedFileHashes = manifest.agents.length > 0 ? sharedFileHashes : [];
+            const skillManagedSharedFileHashes = manifest.agents.length > 0 ? managedSharedFileHashes : [];
             const resolved = listed.resolved;
+            const discoveredSubagents = listed.subagents;
+            const subagentSharedFiles = listed.subagentSharedFiles;
 
             if (skills?.length) {
                 const { desired, missing } = this.resolveDesiredSkills(skills, aliasMap);
@@ -53,7 +73,10 @@ export default class SyncDiscovery {
                     listedAt,
                     skills: desiredUniq,
                     skillEntries: filteredSkillEntries,
-                    sharedFileHashes: sharedFileHashes.filter(entry => filteredSharedFiles.has(entry.path)),
+                    sharedFileHashes: skillSharedFileHashes.filter(entry => filteredSharedFiles.has(entry.path)),
+                    managedSharedFileHashes: skillManagedSharedFileHashes?.filter(entry => filteredSharedFiles.has(entry.path)),
+                    subagents: discoveredSubagents,
+                    subagentSharedFiles,
                     missingRequested: missing,
                     resolved,
                 };
@@ -65,7 +88,10 @@ export default class SyncDiscovery {
                 listedAt,
                 skills: available,
                 skillEntries,
-                sharedFileHashes,
+                sharedFileHashes: skillSharedFileHashes,
+                managedSharedFileHashes: skillManagedSharedFileHashes,
+                subagents: discoveredSubagents,
+                subagentSharedFiles,
                 missingRequested: [],
                 resolved,
             };
@@ -87,13 +113,50 @@ export default class SyncDiscovery {
                 skills: listed.skills,
                 skillEntries: listed.skillEntries,
                 sharedFileHashes: listed.sharedFileHashes,
+                managedSharedFileHashes: listed.managedSharedFileHashes,
                 aliasMap: listed.aliasMap,
                 listedAt: new Date().toISOString(),
                 resolved: listed.resolved,
+                subagents: [],
+                subagentSharedFiles: [],
             };
         }
 
         throw Helpers.error(listed.error, listed.details ? listed.details.slice(0, 2000) : null);
+    }
+
+    private listSourceOrDie({
+        source,
+        skills,
+        subagents,
+        mode,
+        resolvedCommit,
+        lockedSubagentEntries,
+    }: {
+        source: string;
+        skills: string[] | null;
+        subagents: string[] | null;
+        mode: 'update' | 'locked';
+        resolvedCommit: string | null;
+        lockedSubagentEntries: SubagentEntry[];
+    }): ListedSkillsResult {
+        if (typeof this.backend.discoverSource !== 'function') {
+            const listed = this.listSkillsOrDie(source, skills, resolvedCommit);
+            return { ...listed, subagents: [], subagentSharedFiles: [] };
+        }
+
+        const listed = this.backend.discoverSource(source, {
+            skills,
+            subagents,
+            mode,
+            resolvedCommit,
+            lockedSubagentEntries,
+        });
+        if (!listed.ok) {
+            throw Helpers.error(listed.error, listed.details ? listed.details.slice(0, 2000) : null);
+        }
+
+        return listed;
     }
 
     private resolveDesiredSkills(skills: string[], aliasMap: Map<string, string>): { desired: string[]; missing: string[] } {

@@ -412,7 +412,7 @@ function createFakeBackend({ root, agentSkillDirs, sharedFiles = new Map(), remo
                 if (!content) {
                     return { ok: false, error: `Missing shared fixture: ${filePath}` };
                 }
-                files.push({ path: filePath, content });
+                files.push({ path: filePath, content, executable: false });
             }
 
             return {

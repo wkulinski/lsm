@@ -22,8 +22,9 @@ describe('ManifestStore', () => {
                 sources: [],
             });
             expect(readJson(lockPath)).toMatchObject({
-                schemaVersion: 5,
+                schemaVersion: 6,
                 agents: [],
+                subagents: [],
                 sources: {},
             });
             expect(store.ensureFiles()).toEqual([]);
@@ -60,10 +61,24 @@ describe('ManifestStore', () => {
             store.writeLock({ agents: [' cursor ', 'codex', 'codex'], sources });
 
             expect(readJson(lockPath)).toMatchObject({
-                schemaVersion: 5,
+                schemaVersion: 6,
                 agents: [' cursor ', 'codex'],
-                sources,
+                subagents: [],
+                sources: {
+                    upstream: {
+                        mode: 'all',
+                        listedAt: '2026-06-05T00:00:00.000Z',
+                        skillEntries: [],
+                        subagentEntries: [],
+                        sharedEntries: [],
+                        resolved: sources.upstream.resolved,
+                    },
+                },
             });
+            const loaded = store.loadLock();
+            expect(loaded.schemaVersion).toBe(6);
+            expect(loaded.sources.upstream.sharedFileHashes).toBeUndefined();
+            expect(loaded.sources.upstream.sharedEntries).toEqual([]);
         }
         finally {
             fs.rmSync(tempDir, { recursive: true, force: true });

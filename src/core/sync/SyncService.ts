@@ -17,6 +17,7 @@ import type {
     SyncPreflight,
     SyncPreflightConflict,
     SyncRemovalSummary,
+    SubagentSyncResult,
 } from '../types';
 
 export type SyncServiceReporter = (event: ManagerEvent) => void;
@@ -40,11 +41,12 @@ export interface SyncServiceOperations {
         lock: LockData;
         discovered: DiscoveredSources;
     }): SharedSyncResult;
+    syncSubagentsPhase?(input: { lock: LockData; discovered: DiscoveredSources; force?: boolean }): SubagentSyncResult;
     removePhase(plan: SyncPlan): SyncRemovalSummary;
 }
 
 export interface SyncServiceManifestStore {
-    writeLock(input: { agents: string[]; sources: { [key: string]: LockSourceMeta } }): void;
+    writeLock(input: { agents: string[]; subagents?: string[]; sources: { [key: string]: LockSourceMeta } }): void;
 }
 
 export interface SyncServiceRuntime {
@@ -89,6 +91,15 @@ export default class SyncService {
                 update: isUpdate,
                 lock: runtime.lock,
             });
+            if (discovery.missingRequested.length > 0) {
+                return {
+                    status: 'error',
+                    exitCode: 1,
+                    error: 'Requested skills were not found in the source; synchronization was not applied.',
+                    details: discovery.missingRequested,
+                    header: runtime.header,
+                };
+            }
             runtime.sync.assertNoConflicts(discovery.discovered);
 
             const discoveredLockError = this.validateDiscoveredLock(runtime, discovery.discovered, isUpdate);
@@ -115,16 +126,7 @@ export default class SyncService {
             }
             const preflight = preflightDecision.preflight;
 
-            report?.({ type: 'sync-add-start' });
-            Object.entries(discovery.discovered).forEach(([source, meta]) => {
-                report?.({
-                    type: 'sync-add-source',
-                    source,
-                    mode: meta.mode,
-                    skillCount: meta.skills.length,
-                });
-            });
-            const addResult = runtime.sync.addPhase(discovery.discovered, runtime.manifest.agents);
+            const addResult = this.runAddPhase({ runtime, discovered: discovery.discovered, report });
 
             if (addResult.addFailed) {
                 return {
@@ -137,12 +139,7 @@ export default class SyncService {
                 };
             }
 
-            report?.({ type: 'sync-shared-start' });
-            const shared = runtime.sync.syncSharedFilesPhase({
-                manifest: runtime.manifest,
-                lock: runtime.lock,
-                discovered: discovery.discovered,
-            });
+            const shared = this.runSharedPhase({ runtime, discovered: discovery.discovered, report });
 
             if (shared.sharedFailed) {
                 return {
@@ -156,31 +153,18 @@ export default class SyncService {
                 };
             }
 
-            report?.({ type: 'sync-remove-start', plan });
-            const removal = runtime.sync.removePhase(plan);
-
-            const shouldFail = discovery.missingRequested.length > 0;
-            const lockWritten = isUpdate && !shouldFail;
-            if (lockWritten) {
-                runtime.manifestStore.writeLock({
-                    agents: runtime.manifest.agents,
-                    sources: lockSourcesFromDiscovered(discovery.discovered, shared.sharedFileHashesBySource),
-                });
-            }
-
-            return {
-                status: 'completed',
-                exitCode: shouldFail ? 1 : 0,
-                header: runtime.header,
+            return this.finishSync({
+                runtime,
+                discovered: discovery.discovered,
+                missingRequested: discovery.missingRequested,
                 plan,
                 preflight,
-                missingRequested: discovery.missingRequested,
                 installs: addResult.installs,
                 shared,
-                removal,
-                lockWritten,
-                lockMode: isUpdate ? 'updated' : 'locked',
-            };
+                isUpdate,
+                force: options.force === true,
+                report,
+            });
         }
         catch (error) {
             const normalized = normalizeError(error);
@@ -194,15 +178,163 @@ export default class SyncService {
         }
     }
 
+    private finishSync({ runtime, discovered, missingRequested, plan, preflight, installs, shared, isUpdate, force, report }: {
+        runtime: SyncServiceRuntime;
+        discovered: DiscoveredSources;
+        missingRequested: { source: string; skill: string }[];
+        plan: SyncPlan;
+        preflight: SyncPreflight;
+        installs: SyncInstallResult[];
+        shared: SharedSyncResult;
+        isUpdate: boolean;
+        force: boolean;
+        report?: SyncServiceReporter;
+    }): SyncCommandResult {
+        const subagents = this.runSubagentPhase({ runtime, discovered, force, report });
+        if (subagents.subagentFailed) {
+            return {
+                status: 'subagent-failed',
+                exitCode: 1,
+                header: runtime.header,
+                plan,
+                preflight,
+                installs,
+                shared,
+                subagents,
+            };
+        }
+
+        report?.({ type: 'sync-remove-start', plan });
+        const removal = runtime.sync.removePhase(plan);
+        const shouldFail = missingRequested.length > 0;
+        const lockWritten = isUpdate && !shouldFail;
+        if (lockWritten) {
+            runtime.manifestStore.writeLock({
+                agents: runtime.manifest.agents,
+                subagents: runtime.manifest.subagents ?? [],
+                sources: lockSourcesFromDiscovered(
+                    discovered,
+                    shared.sharedFileHashesBySource,
+                    shared.managedFileHashesBySource,
+                ),
+            });
+        }
+
+        return {
+            status: 'completed',
+            exitCode: shouldFail ? 1 : 0,
+            header: runtime.header,
+            plan,
+            preflight,
+            missingRequested,
+            installs,
+            shared,
+            ...(runtime.manifest.subagents?.length ? { subagents } : {}),
+            removal,
+            lockWritten,
+            lockMode: isUpdate ? 'updated' : 'locked',
+        };
+    }
+
+    private runAddPhase({ runtime, discovered, report }: {
+        runtime: SyncServiceRuntime;
+        discovered: DiscoveredSources;
+        report?: SyncServiceReporter;
+    }): { installs: SyncInstallResult[]; addFailed: boolean } {
+        if (runtime.manifest.agents.length === 0) {
+            return { installs: [], addFailed: false };
+        }
+
+        report?.({ type: 'sync-add-start' });
+        Object.entries(discovered).forEach(([source, meta]) => {
+            report?.({
+                type: 'sync-add-source',
+                source,
+                mode: meta.mode,
+                skillCount: meta.skills.length,
+            });
+        });
+        return runtime.sync.addPhase(discovered, runtime.manifest.agents);
+    }
+
+    private runSharedPhase({ runtime, discovered, report }: {
+        runtime: SyncServiceRuntime;
+        discovered: DiscoveredSources;
+        report?: SyncServiceReporter;
+    }): SharedSyncResult {
+        if (runtime.manifest.agents.length === 0) {
+            return this.emptySharedResult();
+        }
+
+        report?.({ type: 'sync-shared-start' });
+        return runtime.sync.syncSharedFilesPhase({
+            manifest: runtime.manifest,
+            lock: runtime.lock,
+            discovered,
+        });
+    }
+
+    private runSubagentPhase({ runtime, discovered, force, report }: {
+        runtime: SyncServiceRuntime;
+        discovered: DiscoveredSources;
+        force: boolean;
+        report?: SyncServiceReporter;
+    }): SubagentSyncResult {
+        if ((runtime.manifest.subagents ?? []).length === 0) {
+            return this.emptySubagentResult();
+        }
+
+        const result = runtime.sync.syncSubagentsPhase?.({ lock: runtime.lock, discovered, force }) ?? {
+            subagentFailed: true,
+            detected: 0,
+            installed: 0,
+            removed: 0,
+            sharedFiles: 0,
+            errors: [{ message: 'Subagent synchronization phase is not configured.' }],
+        };
+        report?.({
+            type: 'sync-subagents',
+            detected: result.detected,
+            installed: result.installed,
+            removed: result.removed,
+            sharedFiles: result.sharedFiles,
+        });
+        return result;
+    }
+
+    private emptySharedResult(): SharedSyncResult {
+        return {
+            sharedFailed: false,
+            managedNewLocalPaths: {},
+            sharedStats: {},
+            sharedFileHashesBySource: {},
+            managedFileHashesBySource: {},
+            removedFiles: 0,
+            errors: [],
+        };
+    }
+
+    private emptySubagentResult(): SubagentSyncResult {
+        return {
+            subagentFailed: false,
+            detected: 0,
+            installed: 0,
+            removed: 0,
+            sharedFiles: 0,
+            errors: [],
+        };
+    }
+
     private validateManifestLock(runtime: SyncServiceRuntime, isUpdate: boolean): ManagerErrorResult | null {
         if (isUpdate) {
             return null;
         }
 
         const error = this.lockValidator.validateManifest({ manifest: runtime.manifest, lock: runtime.lock });
-        return error
-            ? { status: 'error', exitCode: 1, error, header: runtime.header }
-            : null;
+        if (error) {
+            return { status: 'error', exitCode: 1, error, header: runtime.header };
+        }
+        return null;
     }
 
     private validateDiscoveredLock(runtime: SyncServiceRuntime, discovered: DiscoveredSources, isUpdate: boolean): ManagerErrorResult | null {

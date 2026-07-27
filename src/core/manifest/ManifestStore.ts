@@ -43,6 +43,7 @@ export default class ManifestStore {
                 schemaVersion: LOCK_SCHEMA_VERSION,
                 generatedAt: new Date().toISOString(),
                 agents: [],
+                subagents: [],
                 sources: {},
             });
             created.push(this.lockPath);
@@ -67,12 +68,14 @@ export default class ManifestStore {
         return lockManagedSkills(lockSources);
     }
 
-    public writeLock({ agents, sources }: { agents: string[]; sources: { [key: string]: LockSourceMeta } }): void {
+    public writeLock({ agents, subagents = [], sources }: { agents: string[]; subagents?: string[]; sources: { [key: string]: LockSourceMeta } }): void {
+        const normalizedSources = new LockNormalizer({ lockFileName: path.basename(this.lockPath) }).toV6Sources(sources);
         this.writeJson(this.lockPath, {
             schemaVersion: LOCK_SCHEMA_VERSION,
             generatedAt: new Date().toISOString(),
             agents: Helpers.sortUniq(agents),
-            sources,
+            subagents: Helpers.sortUniq(subagents),
+            sources: normalizedSources,
         });
     }
 

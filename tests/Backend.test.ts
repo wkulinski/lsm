@@ -50,8 +50,8 @@ describe('Backend', () => {
                     directories: [{
                         sourcePath: '.agents/skills/example',
                         files: [
-                            { path: 'SKILL.md', content: Buffer.from('# Example\n') },
-                            { path: 'nested/config.json', content: Buffer.from('{"enabled":true}\n') },
+                            { path: 'SKILL.md', content: Buffer.from('# Example\n'), executable: true },
+                            { path: 'nested/config.json', content: Buffer.from('{"enabled":true}\n'), executable: false },
                         ],
                     }],
                 };

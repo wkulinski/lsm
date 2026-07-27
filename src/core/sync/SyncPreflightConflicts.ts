@@ -4,6 +4,7 @@ import SyncPreflightSharedConflicts from './SyncPreflightSharedConflicts';
 import SyncPreflightSkillConflicts from './SyncPreflightSkillConflicts';
 import SyncPreflightUnmanagedConflicts from './SyncPreflightUnmanagedConflicts';
 import SyncPathMapper from './SyncPathMapper';
+import { lockManagedSharedFileHashes } from '../manifest/lockMappers';
 import type {
     BackendLike,
     DiscoveredSources,
@@ -109,8 +110,13 @@ export default class SyncPreflightConflicts {
                 source,
                 skillEntries,
                 targetSkillEntries,
-                baselineSharedFileHashes: sourceMeta.sharedFileHashes,
-                targetSharedFileHashes: targetSourceMeta ? targetSourceMeta.sharedFileHashes : [],
+                baselineSharedFileHashes: lockManagedSharedFileHashes(sourceMeta),
+                targetSharedFileHashes: targetSourceMeta
+                    ? (targetSourceMeta.managedSharedFileHashes ?? targetSourceMeta.sharedFileHashes.map(entry => ({
+                        path: entry.path,
+                        hash: { sha256: entry.sha256, executable: false },
+                    })))
+                    : [],
                 sourceSkillsRootPrefix: sourceSkillsRoot.prefix,
                 allAgentSkillDirs,
                 currentDirSet,

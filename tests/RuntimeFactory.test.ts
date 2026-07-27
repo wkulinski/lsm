@@ -26,8 +26,9 @@ describe('RuntimeFactory', () => {
                 sources: [],
             });
             expect(readJson(path.join(tempDir, 'skills.lock.json'))).toMatchObject({
-                schemaVersion: 5,
+                schemaVersion: 6,
                 agents: [],
+                subagents: [],
                 sources: {},
             });
         }

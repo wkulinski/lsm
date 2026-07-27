@@ -85,6 +85,7 @@ describe('BackendSourceService', () => {
                         files: [{
                             path: '.agents/skills/shared/common.md',
                             content: Buffer.from('# Common\n'),
+                            executable: false,
                         }],
                     };
                 },

@@ -50,6 +50,59 @@ Przykładowy `skills.json`:
 }
 ```
 
+### Subagenty OpenCode
+
+Subagenty są osobnym typem artefaktu synchronizowanym przez `sync`. W pierwszej
+wersji jedynym obsługiwanym targetem jest `opencode`, a pliki trafiają do
+`.opencode/agent/` albo `.opencode/agents/`.
+
+Przykładowy manifest mieszany:
+
+```json
+{
+  "agents": ["codex"],
+  "subagents": ["opencode"],
+  "sources": [
+    {
+      "source": "https://github.com/example/llm-config",
+      "skills": ["code-implement"],
+      "subagents": ["reviewer", "researcher"]
+    }
+  ]
+}
+```
+
+`agents` wybiera integracje dla skilli, natomiast `subagents` w manifeście
+włącza synchronizację plików OpenCode. Na poziomie źródła brak pola lub `null`
+oznacza wszystkie znalezione subagenty, `[]` oznacza żadne, a niepusta tablica
+jest jawną selekcją po nazwie.
+Manifest tylko z subagentami może użyć `"agents": []`; nie wymaga fazy skilli.
+
+Źródło może zawierać `.opencode/agent/`, `.opencode/agents/` albo oba katalogi.
+Projekt używa istniejącego wariantu, domyślnie `.opencode/agents/`, gdy nie ma
+jeszcze żadnego z nich. W trybie `sync --update` wynik autodetekcji jest
+zapisywany jako `targetPath` w locku. Zwykły `sync` używa tej ścieżki z locka i
+nie przenosi pliku po samej zmianie lokalnego układu katalogów.
+
+Opcjonalny sidecar agenta ma nazwę `<agent>.md.lsm.yaml` i ścisły schemat:
+
+```yaml
+schema_version: 1
+shared_files:
+  - .agents/skills/_shared/references/runtime-quality-procedures.md
+```
+
+Sidecar deklaruje wyłącznie pliki `.agents/skills/_shared/`; nie jest kopiowany
+do projektu. Brak sidecara oznacza brak dodatkowych plików współdzielonych.
+Synchronizacja zapisuje lock v6 z `subagentEntries`, `sharedEntries`, hashami,
+bitem wykonywalności i ownershipem. Lock v5 pozostaje obsługiwany dla
+manifestów bez subagentów; manifest z subagentami wymaga `sync --update`, które
+zapisuje v6 dopiero po udanym przebiegu.
+
+`publish` obsługuje wyłącznie skille. Manifest mieszany publikuje tylko skille,
+a manifest zawierający wyłącznie subagenty kończy się komunikatem:
+`Publish currently supports skills only; subagents are sync-only.`
+
 ## Komendy
 
 ### `sync`

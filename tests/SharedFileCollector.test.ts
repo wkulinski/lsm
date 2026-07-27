@@ -37,4 +37,45 @@ describe('SharedFileCollector', () => {
             fs.rmSync(tempDir, { recursive: true, force: true });
         }
     });
+
+    test('collects executable bits for shared files', () => {
+        const tempDir = createTempDir();
+
+        try {
+            const sourceDir = path.join(tempDir, 'source');
+            const executablePath = path.join(sourceDir, 'run.sh');
+            fs.mkdirSync(sourceDir, { recursive: true });
+            fs.writeFileSync(executablePath, '#!/bin/sh\n', 'utf8');
+            fs.chmodSync(executablePath, 0o755);
+
+            expect(new SharedFileCollector().collectSharedFiles(sourceDir, ['run.sh'])).toEqual({
+                ok: true,
+                files: [{
+                    path: 'run.sh',
+                    content: Buffer.from('#!/bin/sh\n'),
+                    executable: true,
+                }],
+            });
+
+            const skillDir = path.join(sourceDir, '.agents', 'skills', 'example');
+            const skillFile = path.join(skillDir, 'run.sh');
+            fs.mkdirSync(skillDir, { recursive: true });
+            fs.writeFileSync(skillFile, '#!/bin/sh\n', 'utf8');
+            fs.chmodSync(skillFile, 0o755);
+            expect(new SharedFileCollector().collectSkillDirectories(sourceDir, ['.agents/skills/example'])).toEqual({
+                ok: true,
+                directories: [{
+                    sourcePath: '.agents/skills/example',
+                    files: [{
+                        path: 'run.sh',
+                        content: Buffer.from('#!/bin/sh\n'),
+                        executable: true,
+                    }],
+                }],
+            });
+        }
+        finally {
+            fs.rmSync(tempDir, { recursive: true, force: true });
+        }
+    });
 });

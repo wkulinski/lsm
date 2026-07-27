@@ -58,11 +58,21 @@ describe('SyncLockValidator', () => {
             discovered,
         })).toContain('unexpected commit');
     });
+
+    test('requires update when a v5 lock is used with subagents', () => {
+        const manifest = createManifest({ subagents: ['opencode'] });
+
+        expect(new SyncLockValidator().validateManifest({
+            manifest,
+            lock: createLock(),
+        })).toContain('Lock schema v5 cannot be used with subagents');
+    });
 });
 
-function createManifest({ agents = ['codex'], source = 'upstream' }: { agents?: string[]; source?: string } = {}): ManifestData {
+function createManifest({ agents = ['codex'], source = 'upstream', subagents = [] }: { agents?: string[]; source?: string; subagents?: string[] } = {}): ManifestData {
     return {
         agents,
+        subagents,
         sources: [{ source, skills: null, publish: { branchPrefix: null, createPr: null } }],
     };
 }

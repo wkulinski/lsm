@@ -86,18 +86,19 @@ describe('SyncWorkflow', () => {
     });
 
     test('does not write lock when requested skills are missing', async () => {
-        const { runtime, lockWrites } = createRuntime({
+        const { runtime, calls, lockWrites } = createRuntime({
             missingRequested: [{ source: 'upstream', skill: 'Missing' }],
         });
 
         const result = await new SyncWorkflow().run({ runtime, options: { update: true } });
 
         expect(result).toMatchObject({
-            status: 'completed',
+            status: 'error',
             exitCode: 1,
-            missingRequested: [{ source: 'upstream', skill: 'Missing' }],
-            lockWritten: false,
+            error: 'Requested skills were not found in the source; synchronization was not applied.',
+            details: [{ source: 'upstream', skill: 'Missing' }],
         });
+        expect(calls).toEqual(['discover']);
         expect(lockWrites).toEqual([]);
     });
 
@@ -160,6 +161,32 @@ describe('SyncWorkflow', () => {
         expect(calls).not.toContain('addPhase');
     });
 
+    test('fails explicitly when a subagent phase is missing from a custom runtime', async () => {
+        const { runtime, calls, lockWrites } = createRuntime({
+            manifest: createManifest({ subagents: ['opencode'] }),
+        });
+
+        const result = await new SyncWorkflow().run({ runtime, options: { update: true } });
+
+        expect(result).toMatchObject({
+            status: 'subagent-failed',
+            exitCode: 1,
+            subagents: {
+                subagentFailed: true,
+                errors: [{ message: 'Subagent synchronization phase is not configured.' }],
+            },
+        });
+        expect(calls).toEqual([
+            'discover',
+            'assertNoConflicts',
+            'planRemovals',
+            'collectLocalChangeConflicts',
+            'addPhase',
+            'syncSharedFilesPhase',
+        ]);
+        expect(lockWrites).toEqual([]);
+    });
+
     test('returns cancelled when preflight confirmation is rejected', async () => {
         const { runtime, calls } = createRuntime({
             preflight: createPreflight({
@@ -198,6 +225,7 @@ function createRuntime(
         },
         shared = createSharedResult(),
         removal = createRemovalSummary(),
+        manifest = createManifest(),
     }: {
         discovered?: DiscoveredSources;
         missingRequested?: { source: string; skill: string }[];
@@ -206,11 +234,11 @@ function createRuntime(
         addResult?: { installs: SyncInstallResult[]; addFailed: boolean };
         shared?: SharedSyncResult;
         removal?: SyncRemovalSummary;
+        manifest?: ManifestData;
     } = {},
 ): FakeRuntime {
     const calls: string[] = [];
     const lockWrites: Parameters<ManagerRuntime['manifestStore']['writeLock']>[0][] = [];
-    const manifest = createManifest();
     const plan = createPlan();
 
     const sync = {
@@ -291,9 +319,10 @@ function createHeader(): ManagerHeader {
     };
 }
 
-function createManifest(): ManifestData {
+function createManifest({ subagents = [] }: { subagents?: string[] } = {}): ManifestData {
     return {
         agents: ['codex'],
+        subagents,
         sources: [{ source: 'upstream', skills: null, publish: { branchPrefix: null, createPr: null } }],
     };
 }

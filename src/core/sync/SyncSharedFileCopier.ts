@@ -1,13 +1,13 @@
-import fs from 'node:fs';
 import path from 'node:path';
 
-import Helpers from '../shared/Helpers';
 import Hashing from '../shared/Hashing';
 import { hasSymlinkInPath } from '../filesystem/PathUtils';
 import { formatUnknown } from '../utils/formatUnknown';
+import type { ManagedFileDeclaration } from './ManagedFileSynchronizer';
 import SyncPathMapper from './SyncPathMapper';
 import type {
     BackendLike,
+    ManagedFileHashEntry,
     SharedSyncError,
     SharedSyncResult,
     SkillEntry,
@@ -16,6 +16,8 @@ import type {
 export interface SyncSharedFileCopyResult {
     managedLocalPaths: string[];
     fileHashes: SharedSyncResult['sharedFileHashesBySource'][string];
+    managedFileHashes: ManagedFileHashEntry[];
+    declarations: ManagedFileDeclaration[];
     stats: SharedSyncResult['sharedStats'][string];
     errors: SharedSyncError[];
 }
@@ -29,7 +31,7 @@ export default class SyncSharedFileCopier {
         this.pathMapper = new SyncPathMapper({ backend });
     }
 
-    public copySourceSharedFiles(
+    public collectSourceSharedFiles(
         { source, skillEntries, agentSkillDirs, resolvedCommit = null }: { source: string; skillEntries: SkillEntry[]; agentSkillDirs: string[]; resolvedCommit?: string | null },
     ): SyncSharedFileCopyResult {
         const sourceSharedFiles = this.pathMapper.collectSharedFilesFromSkillEntries(skillEntries);
@@ -39,6 +41,8 @@ export default class SyncSharedFileCopier {
             return {
                 managedLocalPaths: [],
                 fileHashes: [],
+                managedFileHashes: [],
+                declarations: [],
                 stats: { declaredFiles: 0, copiedFiles: 0 },
                 errors: [],
             };
@@ -49,6 +53,8 @@ export default class SyncSharedFileCopier {
             return {
                 managedLocalPaths: [],
                 fileHashes: [],
+                managedFileHashes: [],
+                declarations: [],
                 stats: { declaredFiles: sourceSharedFiles.length, copiedFiles: 0 },
                 errors: [{
                     source,
@@ -63,6 +69,8 @@ export default class SyncSharedFileCopier {
             return {
                 managedLocalPaths: [],
                 fileHashes: [],
+                managedFileHashes: [],
+                declarations: [],
                 stats: { declaredFiles: sourceSharedFiles.length, copiedFiles: 0 },
                 errors: [{
                     source,
@@ -78,7 +86,17 @@ export default class SyncSharedFileCopier {
                 sha256: Hashing.sha256Buffer(fileEntry.content),
             }))
             .sort((a, b) => a.path.localeCompare(b.path));
+        const managedFileHashes = collected.files
+            .map(fileEntry => ({
+                path: fileEntry.path.trim(),
+                hash: {
+                    sha256: Hashing.sha256Buffer(fileEntry.content),
+                    executable: fileEntry.executable,
+                },
+            }))
+            .sort((a, b) => a.path.localeCompare(b.path));
         const managedFiles = new Set<string>();
+        const declarations: ManagedFileDeclaration[] = [];
         const errors: SharedSyncError[] = [];
 
         agentSkillDirs.forEach((agentSkillDir) => {
@@ -112,16 +130,23 @@ export default class SyncSharedFileCopier {
                 }
 
                 const relativeToProject = this.pathMapper.toProjectRelativePath(destinationPath);
-                this.ensureParentDirectory(destinationPath);
-                fs.writeFileSync(destinationPath, fileEntry.content);
+                declarations.push({
+                    owner: source,
+                    sourcePath: fileEntry.path.trim(),
+                    targetPath: relativeToProject,
+                    content: fileEntry.content,
+                    executable: fileEntry.executable,
+                });
                 managedFiles.add(relativeToProject);
                 copiedFiles += 1;
             });
         });
 
         return {
-            managedLocalPaths: Helpers.sortUniq([...managedFiles]),
+            managedLocalPaths: [...managedFiles].sort((a, b) => a.localeCompare(b)),
             fileHashes,
+            managedFileHashes,
+            declarations,
             stats: {
                 declaredFiles: sourceSharedFiles.length,
                 copiedFiles,
@@ -130,10 +155,13 @@ export default class SyncSharedFileCopier {
         };
     }
 
-    private ensureParentDirectory(filePath: string): void {
-        const parent = path.dirname(filePath);
-        if (!fs.existsSync(parent)) {
-            fs.mkdirSync(parent, { recursive: true });
-        }
+    /**
+     * Compatibility adapter for callers that used the pre-refactor name.
+     * Applying declarations is deliberately owned by ManagedFileSynchronizer.
+     */
+    public copySourceSharedFiles(
+        input: { source: string; skillEntries: SkillEntry[]; agentSkillDirs: string[]; resolvedCommit?: string | null },
+    ): SyncSharedFileCopyResult {
+        return this.collectSourceSharedFiles(input);
     }
 }

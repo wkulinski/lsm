@@ -10,7 +10,9 @@ import type {
     FailureResult,
     ListSkillsSuccess,
     ResolvedSource,
+    SourceDiscoverySuccess,
 } from '../types/discovery';
+import type { SubagentEntry } from '../types/manifest';
 
 interface BackendConstructorOptions {
     root: string;
@@ -25,6 +27,16 @@ export default class BackendAdapter {
 
     public listSkills(source: string, options: BackendSourceListSkillsOptions = {}): ListSkillsSuccess | FailureResult {
         return new BackendSourceService().listSkills(source, options);
+    }
+
+    public discoverSource(source: string, options: {
+        skills?: string[] | null;
+        subagents?: string[] | null;
+        mode?: 'update' | 'locked';
+        resolvedCommit?: string | null;
+        lockedSubagentEntries?: SubagentEntry[];
+    } = {}): SourceDiscoverySuccess | FailureResult {
+        return new BackendSourceService().discoverSource(source, { ...options, projectRoot: this.root });
     }
 
     public resolveSource(source: string): ResolvedSource | FailureResult {

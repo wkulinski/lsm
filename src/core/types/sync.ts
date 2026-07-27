@@ -1,4 +1,5 @@
 import type { ManagerEvent } from './events';
+import type { ManagedFileHashEntry } from './manifest';
 import type { ManagerErrorResult, ManagerHeader, ManagerTemplatesCreatedResult } from './manager';
 
 type Reporter = (event: ManagerEvent) => void;
@@ -54,7 +55,17 @@ export interface SharedSyncResult {
     managedNewLocalPaths: { [key: string]: string[] };
     sharedStats: { [key: string]: { declaredFiles: number; copiedFiles: number } };
     sharedFileHashesBySource: { [key: string]: { path: string; sha256: string }[] };
+    managedFileHashesBySource?: { [key: string]: ManagedFileHashEntry[] };
     removedFiles?: number;
+    errors: SharedSyncError[];
+}
+
+export interface SubagentSyncResult {
+    subagentFailed: boolean;
+    detected: number;
+    installed: number;
+    removed: number;
+    sharedFiles: number;
     errors: SharedSyncError[];
 }
 
@@ -106,6 +117,17 @@ export interface SyncSharedFailedResult {
     shared: SharedSyncResult;
 }
 
+export interface SyncSubagentFailedResult {
+    status: 'subagent-failed';
+    exitCode: 1;
+    header: ManagerHeader;
+    plan: SyncPlan;
+    preflight: SyncPreflight;
+    installs: SyncInstallResult[];
+    shared: SharedSyncResult;
+    subagents: SubagentSyncResult;
+}
+
 export interface SyncCompletedResult {
     status: 'completed';
     exitCode: number;
@@ -115,6 +137,7 @@ export interface SyncCompletedResult {
     missingRequested: { source: string; skill: string }[];
     installs: SyncInstallResult[];
     shared: SharedSyncResult;
+    subagents?: SubagentSyncResult;
     removal: SyncRemovalSummary;
     lockWritten: boolean;
     lockMode?: 'locked' | 'updated';
@@ -126,4 +149,5 @@ export type SyncCommandResult
         | SyncCancelledResult
         | SyncAddFailedResult
         | SyncSharedFailedResult
+        | SyncSubagentFailedResult
         | SyncCompletedResult;

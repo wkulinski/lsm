@@ -11,6 +11,7 @@ import type {
     DiscoveredSources,
     LockData,
     LockSourceMeta,
+    ManagedFileHashEntry,
     ManifestData,
     SharedFileContentEntry,
     SkillEntry,
@@ -119,6 +120,65 @@ describe('SyncPreflightConflicts', () => {
                     skill: null,
                 }],
             });
+        }
+        finally {
+            fs.rmSync(tempDir, { recursive: true, force: true });
+        }
+    });
+
+    test('detects an executable-only change in a managed shared file', () => {
+        const tempDir = createTempDir();
+
+        try {
+            const agentSkillDir = path.join(tempDir, '.agents', 'skills');
+            const sharedSourcePath = '.agents/skills/shared/script.sh';
+            const localSharedPath = path.join(tempDir, sharedSourcePath);
+            const content = Buffer.from('#!/bin/sh\n');
+            fs.mkdirSync(path.dirname(localSharedPath), { recursive: true });
+            fs.writeFileSync(localSharedPath, content);
+            fs.chmodSync(localSharedPath, 0o755);
+            const hash = Hashing.sha256Buffer(content);
+
+            const result = createPreflight({ root: tempDir, agentSkillDirs: [agentSkillDir] }).collectLocalChangeConflicts({
+                manifest: createManifest(),
+                lock: createLock({
+                    sources: {
+                        upstream: createLockSourceMeta({
+                            skillEntries: [createSkillEntry({
+                                name: 'Alpha',
+                                sourcePath: '.agents/skills/alpha',
+                                sharedFiles: [sharedSourcePath],
+                            })],
+                            sharedEntries: [{
+                                sourcePath: sharedSourcePath,
+                                targetPath: sharedSourcePath,
+                                hash: { sha256: hash, executable: false },
+                                owners: ['skill:Alpha'],
+                            }],
+                        }),
+                    },
+                }),
+                discovered: {
+                    upstream: createDiscoveredSource({
+                        skillEntries: [createSkillEntry({
+                            name: 'Alpha',
+                            sourcePath: '.agents/skills/alpha',
+                            sharedFiles: [sharedSourcePath],
+                        })],
+                        managedSharedFileHashes: [{ path: sharedSourcePath, hash: { sha256: hash, executable: false } }],
+                    }),
+                },
+                plan: { agentsUnion: ['codex'], skillsRemoved: [] },
+            });
+
+            expect(result.conflicts).toEqual([{
+                path: sharedSourcePath,
+                reason: 'modified-managed',
+                operation: 'overwrite',
+                scope: 'shared',
+                source: 'upstream',
+                skill: null,
+            }]);
         }
         finally {
             fs.rmSync(tempDir, { recursive: true, force: true });
@@ -750,13 +810,22 @@ function createSharedConflictScenario({
     };
 }
 
-function createDiscoveredSource({ skillEntries, sharedFileHashes = [] }: { skillEntries: SkillEntry[]; sharedFileHashes?: { path: string; sha256: string }[] }): DiscoveredSources[string] {
+function createDiscoveredSource({
+    skillEntries,
+    sharedFileHashes = [],
+    managedSharedFileHashes,
+}: {
+    skillEntries: SkillEntry[];
+    sharedFileHashes?: { path: string; sha256: string }[];
+    managedSharedFileHashes?: ManagedFileHashEntry[];
+}): DiscoveredSources[string] {
     return {
         mode: 'all',
         listedAt: '2026-06-05T00:00:00.000Z',
         skills: skillEntries.map(entry => entry.name),
         skillEntries,
         sharedFileHashes,
+        managedSharedFileHashes,
         missingRequested: [],
         resolved: createResolvedMeta(),
     };
@@ -783,12 +852,13 @@ function createSkillEntry(
     };
 }
 
-function createLockSourceMeta({ skillEntries = [], sharedFileHashes = [] }: Partial<LockSourceMeta> = {}): LockSourceMeta {
+function createLockSourceMeta({ skillEntries = [], sharedFileHashes = [], sharedEntries }: Partial<LockSourceMeta> = {}): LockSourceMeta {
     return {
         mode: 'all',
         listedAt: '2026-06-05T00:00:00.000Z',
         skillEntries,
         sharedFileHashes,
+        sharedEntries,
         resolved: createResolvedMeta(),
     };
 }

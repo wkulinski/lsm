@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { hasSymlinkInPath, isPathInside } from '../filesystem/PathUtils';
+import { hasExecutableBit } from '../filesystem/FilePermissions';
 import type {
     CollectSharedFilesSuccess,
     CollectSkillDirectoriesSuccess,
@@ -13,6 +14,7 @@ interface SharedFileReadCandidateSuccess {
     ok: true;
     path: string;
     content: Buffer;
+    executable: boolean;
 }
 
 type SharedFileReadCandidate = SharedFileReadCandidateSuccess | FailureResult;
@@ -70,6 +72,7 @@ export default class SharedFileCollector {
                 ok: true,
                 path: relativePath,
                 content: fs.readFileSync(absolutePath),
+                executable: hasExecutableBit(stat.mode),
             };
         });
 
@@ -79,7 +82,14 @@ export default class SharedFileCollector {
         }
         const successfulFiles = files as SharedFileReadCandidateSuccess[];
 
-        return { ok: true, files: successfulFiles.map(entry => ({ path: entry.path, content: entry.content })) };
+        return {
+            ok: true,
+            files: successfulFiles.map(entry => ({
+                path: entry.path,
+                content: entry.content,
+                executable: entry.executable,
+            })),
+        };
     }
 
     public collectSkillDirectories(basePath: string, skillSourcePaths: string[]): CollectSkillDirectoriesSuccess | FailureResult {
@@ -120,6 +130,7 @@ export default class SharedFileCollector {
             const files = this.collectFilesRecursively(absolutePath).map(fileEntry => ({
                 path: fileEntry.relativePath,
                 content: fs.readFileSync(fileEntry.absolutePath),
+                executable: hasExecutableBit(fs.statSync(fileEntry.absolutePath).mode),
             }));
 
             return {

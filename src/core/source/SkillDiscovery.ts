@@ -4,6 +4,7 @@ import SkillFrontmatterParser from './SkillFrontmatterParser';
 import SkillScanner, { type DiscoveredSkills } from './SkillScanner';
 import SharedFileCollector from './SharedFileCollector';
 import SourceResolver from './SourceResolver';
+import SourceWorkspace, { type SourceWorkspaceHandle } from './SourceWorkspace';
 import type {
     CollectSharedFilesSuccess,
     CollectSkillDirectoriesSuccess,
@@ -45,113 +46,74 @@ export default class SkillDiscovery {
     }
 
     public listSkills(source: string, options: { resolvedCommit?: string | null } = {}): ListSkillsSuccess | FailureResult {
-        const resolved = this.resolveSource(source);
-        if (!resolved.ok) {
-            return { ok: false, error: resolved.error };
-        }
-
-        const defaultBranch = this.gitSourceClient.detectDefaultBranch(resolved.url);
-        const resolvedCommit = options.resolvedCommit ?? null;
-        const clone = this.gitSourceClient.cloneRepo({
-            url: resolved.url,
-            ref: resolvedCommit ? null : resolved.ref,
-            commit: resolvedCommit,
-            depth: 1,
-        });
-        if (!clone.ok) {
-            return { ok: false, error: clone.error, details: clone.details };
-        }
-
-        try {
-            const { skills, aliasMap } = this.discover(clone.dir, resolved.subpath);
-            if (skills.length === 0) {
-                return {
-                    ok: false,
-                    error: `No skills found in ${source}`,
-                };
-            }
-
-            const catalog = this.skillCatalogBuilder.build(clone.dir, skills);
-
-            const resolvedCommitResult = this.gitSourceClient.gitCapture(clone.dir, ['rev-parse', 'HEAD']);
-            const discoveredCommit = resolvedCommitResult.ok ? resolvedCommitResult.stdout.trim() : null;
-            const currentBranchResult = this.gitSourceClient.gitCapture(clone.dir, ['rev-parse', '--abbrev-ref', 'HEAD']);
-            const currentBranch = currentBranchResult.ok ? currentBranchResult.stdout.trim() : null;
-            const resolvedRef = resolved.ref
-                ?? ((currentBranch && currentBranch !== 'HEAD') ? currentBranch : (defaultBranch ?? null));
-
-            return {
-                ok: true,
-                skills: catalog.skillNames,
-                skillEntries: catalog.skillEntries,
-                sharedFileHashes: catalog.sharedFileHashes,
-                aliasMap,
-                resolved: {
-                    requestedRef: resolved.ref ?? null,
-                    defaultBranch,
-                    resolvedRef,
-                    resolvedCommit: discoveredCommit,
-                    subpath: resolved.subpath ?? null,
-                    resolvedAt: new Date().toISOString(),
-                },
-            };
-        }
-        finally {
-            this.gitSourceClient.cleanupTempDir(clone.dir);
-        }
+        return this.createWorkspace().withWorkspace(
+            source,
+            { resolvedCommit: options.resolvedCommit ?? null },
+            workspace => this.listSkillsInWorkspace(source, workspace),
+        );
     }
 
     public collectSharedFiles(source: string, sharedFiles: string[], options: { resolvedCommit?: string | null } = {}): CollectSharedFilesSuccess | FailureResult {
-        const resolved = this.resolveSource(source);
-        if (!resolved.ok) {
-            return { ok: false, error: resolved.error };
-        }
-
-        const resolvedCommit = options.resolvedCommit ?? null;
-        const clone = this.gitSourceClient.cloneRepo({
-            url: resolved.url,
-            ref: resolvedCommit ? null : resolved.ref,
-            commit: resolvedCommit,
-            depth: 1,
-        });
-        if (!clone.ok) {
-            return { ok: false, error: clone.error, details: clone.details };
-        }
-
-        try {
-            return this.sharedFileCollector.collectSharedFiles(clone.dir, sharedFiles);
-        }
-        finally {
-            this.gitSourceClient.cleanupTempDir(clone.dir);
-        }
+        return this.createWorkspace().withWorkspace(
+            source,
+            { resolvedCommit: options.resolvedCommit ?? null, detectDefaultBranch: false },
+            workspace => this.sharedFileCollector.collectSharedFiles(workspace.root, sharedFiles),
+        );
     }
 
     public collectSkillDirectories(source: string, skillSourcePaths: string[], options: { resolvedCommit?: string | null } = {}): CollectSkillDirectoriesSuccess | FailureResult {
-        const resolved = this.resolveSource(source);
-        if (!resolved.ok) {
-            return { ok: false, error: resolved.error };
+        return this.createWorkspace().withWorkspace(
+            source,
+            { resolvedCommit: options.resolvedCommit ?? null, detectDefaultBranch: false },
+            workspace => this.sharedFileCollector.collectSkillDirectories(workspace.root, skillSourcePaths),
+        );
+    }
+
+    public listSkillsInWorkspace(source: string, workspace: SourceWorkspaceHandle): ListSkillsSuccess | FailureResult {
+        const { skills, aliasMap } = this.discoverWorkspace(workspace);
+        if (skills.length === 0) {
+            return {
+                ok: false,
+                error: `No skills found in ${source}`,
+            };
         }
 
-        const resolvedCommit = options.resolvedCommit ?? null;
-        const clone = this.gitSourceClient.cloneRepo({
-            url: resolved.url,
-            ref: resolvedCommit ? null : resolved.ref,
-            commit: resolvedCommit,
-            depth: 1,
-        });
-        if (!clone.ok) {
-            return { ok: false, error: clone.error, details: clone.details };
-        }
+        const catalog = this.skillCatalogBuilder.build(workspace.root, skills);
+        const resolvedRef = workspace.resolved.ref
+            ?? ((workspace.currentBranch && workspace.currentBranch !== 'HEAD')
+                ? workspace.currentBranch
+                : (workspace.defaultBranch ?? null));
 
-        try {
-            return this.sharedFileCollector.collectSkillDirectories(clone.dir, skillSourcePaths);
-        }
-        finally {
-            this.gitSourceClient.cleanupTempDir(clone.dir);
-        }
+        return {
+            ok: true,
+            skills: catalog.skillNames,
+            skillEntries: catalog.skillEntries,
+            sharedFileHashes: catalog.sharedFileHashes,
+            managedSharedFileHashes: catalog.managedSharedFileHashes,
+            aliasMap,
+            resolved: {
+                requestedRef: workspace.resolved.ref ?? null,
+                defaultBranch: workspace.defaultBranch,
+                resolvedRef,
+                resolvedCommit: workspace.resolvedCommit,
+                subpath: workspace.resolved.subpath ?? null,
+                resolvedAt: new Date().toISOString(),
+            },
+        };
+    }
+
+    public discoverWorkspace(workspace: SourceWorkspaceHandle): DiscoveredSkills {
+        return this.discover(workspace.root, workspace.resolved.subpath);
     }
 
     public discover(basePath: string, subpath: string | null): DiscoveredSkills {
         return this.skillScanner.discover(basePath, subpath);
+    }
+
+    public createWorkspace(): SourceWorkspace {
+        return new SourceWorkspace({
+            resolveSource: source => this.resolveSource(source),
+            gitSourceClient: this.gitSourceClient,
+        });
     }
 }

@@ -6,11 +6,13 @@ export interface ManifestPublishConfig {
 export interface ManifestSourceEntry {
     source: string;
     skills: string[] | null;
+    subagents?: string[] | null;
     publish: ManifestPublishConfig;
 }
 
 export interface ManifestData {
     agents: string[];
+    subagents?: string[];
     sources: ManifestSourceEntry[];
 }
 
@@ -31,6 +33,31 @@ export interface SkillEntry {
     hash: SkillTreeHash | null;
 }
 
+export interface ManagedFileHash {
+    sha256: string;
+    executable: boolean;
+}
+
+export interface ManagedFileHashEntry {
+    path: string;
+    hash: ManagedFileHash;
+}
+
+export interface SubagentEntry {
+    name: string;
+    sourcePath: string;
+    targetPath: string;
+    sharedFiles: string[];
+    hash: ManagedFileHash;
+}
+
+export interface SharedEntry {
+    sourcePath: string;
+    targetPath: string;
+    hash: ManagedFileHash;
+    owners: string[];
+}
+
 export interface ResolvedSourceMeta {
     requestedRef: string | null;
     defaultBranch: string | null;
@@ -44,12 +71,15 @@ export interface LockSourceMeta {
     mode: string;
     listedAt: string | null;
     skillEntries: SkillEntry[];
-    sharedFileHashes: FileHashEntry[];
+    sharedFileHashes?: FileHashEntry[];
+    subagentEntries?: SubagentEntry[];
+    sharedEntries?: SharedEntry[];
     resolved: ResolvedSourceMeta;
 }
 
 export interface LockData {
     schemaVersion: number;
     agents: string[];
+    subagents?: string[];
     sources: { [key: string]: LockSourceMeta };
 }

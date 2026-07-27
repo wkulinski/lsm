@@ -1,9 +1,12 @@
 import Helpers from '../shared/Helpers';
+import Hashing from '../shared/Hashing';
+import { lockManagedSharedFileHashes } from '../manifest/lockMappers';
 import type {
     DiscoveredSources,
     LockData,
     ManifestData,
     SkillEntry,
+    SubagentEntry,
 } from '../types';
 
 const UPDATE_HINT = 'Run `lsm sync --update` to resolve sources and update the lock.';
@@ -16,6 +19,13 @@ export default class SyncLockValidator {
 
         if (this.stringifySorted(manifest.agents) !== this.stringifySorted(lock.agents)) {
             return `Lock agents do not match skills.json. ${UPDATE_HINT}`;
+        }
+
+        if ((manifest.subagents ?? []).length > 0 && lock.schemaVersion === 5) {
+            return `Lock schema v5 cannot be used with subagents. ${UPDATE_HINT}`;
+        }
+        if (this.stringifySorted(manifest.subagents ?? []) !== this.stringifySorted(lock.subagents ?? [])) {
+            return `Lock subagents do not match skills.json. ${UPDATE_HINT}`;
         }
 
         const manifestSources = Helpers.sortUniq(manifest.sources.map(entry => entry.source));
@@ -57,8 +67,39 @@ export default class SyncLockValidator {
                 return `Locked skill selection for "${source}" does not match skills.json. ${UPDATE_HINT}`;
             }
 
-            if (this.sharedFileHashesSignature(lockMeta.sharedFileHashes) !== this.sharedFileHashesSignature(discoveredMeta.sharedFileHashes)) {
+            if (this.subagentEntriesSignature(lockMeta.subagentEntries ?? []) !== this.subagentEntriesSignature(
+                (discoveredMeta.subagents ?? []).map(subagent => ({
+                    name: subagent.name,
+                    sourcePath: subagent.sourcePath,
+                    targetPath: subagent.targetPath,
+                    sharedFiles: subagent.sharedFiles,
+                    hash: subagent.hash,
+                })),
+            )) {
+                return `Locked subagent selection for "${source}" does not match skills.json. ${UPDATE_HINT}`;
+            }
+
+            const discoveredSharedFileHashes = discoveredMeta.managedSharedFileHashes ?? discoveredMeta.sharedFileHashes.map(entry => ({
+                path: entry.path,
+                hash: { sha256: entry.sha256, executable: false },
+            }));
+            const lockedSkillSharedEntries = Array.isArray(lockMeta.sharedEntries)
+                ? lockMeta.sharedEntries
+                    .filter(entry => entry.owners.length === 0 || entry.owners.some(owner => owner.startsWith('skill:')))
+                    .map(entry => ({ path: entry.targetPath, hash: entry.hash }))
+                : lockManagedSharedFileHashes(lockMeta);
+            if (this.managedFileHashesSignature(lockedSkillSharedEntries) !== this.managedFileHashesSignature(discoveredSharedFileHashes)) {
                 return `Locked shared files for "${source}" do not match the source commit. ${UPDATE_HINT}`;
+            }
+
+            const lockedSubagentSharedEntries = (lockMeta.sharedEntries ?? [])
+                .filter(entry => entry.owners.some(owner => owner.startsWith('subagent:')));
+            const discoveredSubagentSharedEntries = (discoveredMeta.subagentSharedFiles ?? []).map(file => ({
+                path: file.path,
+                hash: { sha256: Hashing.sha256Buffer(file.content), executable: file.executable },
+            }));
+            if (this.managedFileHashesSignature(lockedSubagentSharedEntries.map(entry => ({ path: entry.targetPath, hash: entry.hash }))) !== this.managedFileHashesSignature(discoveredSubagentSharedEntries)) {
+                return `Locked subagent shared files for "${source}" do not match the source commit. ${UPDATE_HINT}`;
             }
         }
 
@@ -83,12 +124,22 @@ export default class SyncLockValidator {
         );
     }
 
-    private sharedFileHashesSignature(entries: { path: string; sha256: string }[]): string {
+    private managedFileHashesSignature(entries: { path: string; hash: { sha256: string; executable: boolean } }[]): string {
         return JSON.stringify(
             entries
-                .map(entry => ({ path: entry.path, sha256: entry.sha256 }))
+                .map(entry => ({ path: entry.path, hash: entry.hash }))
                 .sort((a, b) => a.path.localeCompare(b.path)),
         );
+    }
+
+    private subagentEntriesSignature(entries: SubagentEntry[]): string {
+        return JSON.stringify(entries.map(entry => ({
+            name: entry.name,
+            sourcePath: entry.sourcePath,
+            targetPath: entry.targetPath,
+            sharedFiles: Helpers.sortUniq(entry.sharedFiles),
+            hash: entry.hash,
+        })).sort((a, b) => a.name.localeCompare(b.name)));
     }
 
     private stringifySorted(values: string[]): string {

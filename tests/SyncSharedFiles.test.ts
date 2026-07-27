@@ -24,6 +24,53 @@ interface FakeBackendOptions {
 }
 
 describe('SyncSharedFiles', () => {
+    test('synchronizes executable bits for new and existing shared files', () => {
+        const tempDir = createTempDir();
+
+        try {
+            const agentSkillDir = path.join(tempDir, '.agents', 'skills');
+            const newPath = '.agents/skills/shared/new.sh';
+            const existingPath = '.agents/skills/shared/existing.sh';
+            const existingLocalPath = path.join(tempDir, existingPath);
+            fs.mkdirSync(path.dirname(existingLocalPath), { recursive: true });
+            fs.writeFileSync(existingLocalPath, 'old\n', 'utf8');
+            fs.chmodSync(existingLocalPath, 0o755);
+
+            const syncSharedFiles = createSyncSharedFiles({
+                root: tempDir,
+                agentSkillDirs: [agentSkillDir],
+                sharedFileEntries: new Map([
+                    [newPath, { path: newPath, content: Buffer.from('#!/bin/sh\n'), executable: true }],
+                    [existingPath, { path: existingPath, content: Buffer.from('new\n'), executable: false }],
+                ]),
+            });
+
+            const result = syncSharedFiles.syncSharedFilesPhase({
+                manifest: createManifest(),
+                lock: createLock(),
+                discovered: {
+                    upstream: createDiscoveredSource({
+                        skillEntries: [createSkillEntry({
+                            name: 'Alpha',
+                            sourcePath: '.agents/skills/alpha',
+                            sharedFiles: [newPath, existingPath],
+                        })],
+                    }),
+                },
+            });
+
+            expect(result.sharedFailed).toBe(false);
+            expect(fs.statSync(path.join(tempDir, newPath)).mode & 0o111).toBe(0o111);
+            const existingMode = fs.statSync(existingLocalPath).mode;
+            expect(existingMode & 0o111).toBe(0);
+            expect(existingMode & 0o666).toBe(0o644);
+            expect(fs.readFileSync(existingLocalPath, 'utf8')).toBe('new\n');
+        }
+        finally {
+            fs.rmSync(tempDir, { recursive: true, force: true });
+        }
+    });
+
     test('reports ownership conflicts when two sources manage the same local shared file', () => {
         const tempDir = createTempDir();
 
@@ -169,6 +216,7 @@ describe('SyncSharedFiles', () => {
                 sharedFileEntries: new Map([[requestedPath, {
                     path: collectedPath,
                     content: Buffer.from('# Current\n'),
+                    executable: false,
                 }]]),
             });
 
@@ -304,7 +352,7 @@ function createFakeBackend({ root, agentSkillDirs, sharedFiles = new Map(), shar
                 if (!content) {
                     return { ok: false, error: `Missing shared fixture: ${filePath}` };
                 }
-                files.push({ path: filePath, content });
+                files.push({ path: filePath, content, executable: false });
             }
 
             return { ok: true, files };

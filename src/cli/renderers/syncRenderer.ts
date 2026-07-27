@@ -36,6 +36,9 @@ export function renderSyncEvent(event: ManagerEvent): void {
         case 'sync-shared-start':
             process.stdout.write('\n-- Syncing shared files declared in skill frontmatter --\n');
             return;
+        case 'sync-subagents':
+            process.stdout.write('\n-- Syncing OpenCode subagents --\n');
+            return;
         case 'sync-remove-start':
             printRemovalStart(event.plan);
             return;
@@ -63,8 +66,16 @@ export function renderSyncResult(result: SyncCommandResult): number {
             printSharedErrors(result.shared.errors);
             process.stdout.write('\nAborting before removals because shared file sync failed.\n');
             return result.exitCode;
+        case 'subagent-failed':
+            printSubagentSummary(result.subagents);
+            printSharedErrors(result.subagents.errors);
+            process.stdout.write('\nAborting before removals because subagent sync failed.\n');
+            return result.exitCode;
         case 'completed':
             printSharedSummary(result);
+            if (result.subagents) {
+                printSubagentSummary(result.subagents);
+            }
             printMissingRequested(result.missingRequested);
             printInstallSummary(result.installs);
             printLockOutcome(result.lockWritten, result.header.lockRelativePath, result.lockMode);
@@ -170,6 +181,19 @@ function printSharedErrors(errors: SharedSyncError[]): void {
             process.stderr.write(`   ${formatUnknown(error.details)}\n`);
         }
     });
+}
+
+function printSubagentSummary(summary: {
+    detected: number;
+    installed: number;
+    removed: number;
+    sharedFiles: number;
+}): void {
+    process.stdout.write('\n== Subagents summary ==\n');
+    process.stdout.write(`Detected : ${String(summary.detected)}\n`);
+    process.stdout.write(`Installed: ${String(summary.installed)}\n`);
+    process.stdout.write(`Removed  : ${String(summary.removed)}\n`);
+    process.stdout.write(`Shared files: ${String(summary.sharedFiles)}\n`);
 }
 
 function printMissingRequested(missingRequested: { source: string; skill: string }[]): void {

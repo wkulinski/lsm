@@ -6,7 +6,7 @@ import SyncPathMapper from './SyncPathMapper';
 import type SyncPreflightConflictSet from './SyncPreflightConflictSet';
 import type {
     BackendLike,
-    FileHashEntry,
+    ManagedFileHashEntry,
     SkillEntry,
 } from '../types';
 
@@ -33,8 +33,8 @@ export default class SyncPreflightSharedConflicts {
         source: string;
         skillEntries: SkillEntry[];
         targetSkillEntries: SkillEntry[];
-        baselineSharedFileHashes: FileHashEntry[];
-        targetSharedFileHashes: FileHashEntry[];
+        baselineSharedFileHashes: ManagedFileHashEntry[];
+        targetSharedFileHashes: ManagedFileHashEntry[];
         sourceSkillsRootPrefix: string | undefined;
         allAgentSkillDirs: string[];
         currentDirSet: Set<string>;
@@ -42,15 +42,15 @@ export default class SyncPreflightSharedConflicts {
         oldManagedPathSet: Set<string>;
         conflictSet: SyncPreflightConflictSet;
     }): void {
-        const baselineSharedFileHashMap = new Map<string, string>(
+        const baselineSharedFileHashMap = new Map<string, { sha256: string; executable: boolean }>(
             baselineSharedFileHashes
-                .map(entry => [entry.path.trim(), entry.sha256.trim()] as const)
-                .filter(([filePath, sha256]) => Boolean(filePath && sha256)),
+                .map(entry => [entry.path.trim(), entry.hash] as const)
+                .filter(([filePath, hash]) => Boolean(filePath && hash.sha256)),
         );
-        const targetSharedFileHashMap = new Map<string, string>(
+        const targetSharedFileHashMap = new Map<string, { sha256: string; executable: boolean }>(
             targetSharedFileHashes
-                .map(entry => [entry.path.trim(), entry.sha256.trim()] as const)
-                .filter(([filePath, sha256]) => Boolean(filePath && sha256)),
+                .map(entry => [entry.path.trim(), entry.hash] as const)
+                .filter(([filePath, hash]) => Boolean(filePath && hash.sha256)),
         );
         const oldSharedFiles = new Set([
             ...baselineSharedFileHashMap.keys(),
@@ -86,14 +86,14 @@ export default class SyncPreflightSharedConflicts {
                 const operation = currentDirSet.has(agentSkillDir) && newManagedPathSet.has(localSharedFileRelative)
                     ? 'overwrite'
                     : 'delete';
-                const baselineSha = baselineSharedFileHashMap.get(sourceSharedFilePath);
-                const targetSha = targetSharedFileHashMap.get(sourceSharedFilePath);
+                const baselineHash = baselineSharedFileHashMap.get(sourceSharedFilePath);
+                const targetHash = targetSharedFileHashMap.get(sourceSharedFilePath);
 
                 const stat = fs.statSync(localSharedFilePath);
                 if (!stat.isFile()) {
                     conflictSet.add({
                         path: localSharedFileRelative,
-                        reason: baselineSha ? 'modified-managed' : 'missing-baseline-hash',
+                        reason: baselineHash ? 'modified-managed' : 'missing-baseline-hash',
                         operation,
                         scope: 'shared',
                         source,
@@ -102,11 +102,14 @@ export default class SyncPreflightSharedConflicts {
                     return;
                 }
 
-                const currentSha = Hashing.sha256File(localSharedFilePath);
-                if (targetSha === currentSha) {
+                const currentHash = {
+                    sha256: Hashing.sha256File(localSharedFilePath),
+                    executable: (stat.mode & 0o111) !== 0,
+                };
+                if (targetHash && this.sameHash(targetHash, currentHash)) {
                     return;
                 }
-                if (!baselineSha) {
+                if (!baselineHash) {
                     conflictSet.add({
                         path: localSharedFileRelative,
                         reason: 'missing-baseline-hash',
@@ -117,7 +120,7 @@ export default class SyncPreflightSharedConflicts {
                     });
                     return;
                 }
-                if (currentSha !== baselineSha) {
+                if (!this.sameHash(currentHash, baselineHash)) {
                     conflictSet.add({
                         path: localSharedFileRelative,
                         reason: 'modified-managed',
@@ -129,5 +132,9 @@ export default class SyncPreflightSharedConflicts {
                 }
             });
         });
+    }
+
+    private sameHash(left: { sha256: string; executable: boolean }, right: { sha256: string; executable: boolean }): boolean {
+        return left.sha256 === right.sha256 && left.executable === right.executable;
     }
 }

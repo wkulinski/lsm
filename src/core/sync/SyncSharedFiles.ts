@@ -1,6 +1,5 @@
 import SyncSharedFileCopier from './SyncSharedFileCopier';
-import SyncSharedFileOwnership from './SyncSharedFileOwnership';
-import SyncSharedFilePruner from './SyncSharedFilePruner';
+import ManagedFileSynchronizer from './ManagedFileSynchronizer';
 import SyncPathMapper from './SyncPathMapper';
 import type {
     BackendLike,
@@ -21,16 +20,14 @@ export default class SyncSharedFiles {
     public manifestStore: SharedFilesManifestStoreLike;
     public pathMapper: SyncPathMapper;
     public copier: SyncSharedFileCopier;
-    public ownership: SyncSharedFileOwnership;
-    public pruner: SyncSharedFilePruner;
+    public synchronizer: ManagedFileSynchronizer;
 
     public constructor({ backend, manifestStore }: { backend: BackendLike; manifestStore: SharedFilesManifestStoreLike }) {
         this.backend = backend;
         this.manifestStore = manifestStore;
         this.pathMapper = new SyncPathMapper({ backend });
         this.copier = new SyncSharedFileCopier({ backend });
-        this.ownership = new SyncSharedFileOwnership();
-        this.pruner = new SyncSharedFilePruner({ backend });
+        this.synchronizer = new ManagedFileSynchronizer({ root: backend.root });
     }
 
     public syncSharedFilesPhase({ manifest, lock, discovered }: { manifest: ManifestData; lock: LockData; discovered: DiscoveredSources }): SharedSyncResult {
@@ -38,8 +35,10 @@ export default class SyncSharedFiles {
         const managedOldLocalPaths: { [key: string]: string[] } = {};
         const managedNewLocalPaths: { [key: string]: string[] } = {};
         const sharedFileHashesBySource: SharedSyncResult['sharedFileHashesBySource'] = {};
+        const managedFileHashesBySource: NonNullable<SharedSyncResult['managedFileHashesBySource']> = {};
         const sharedStats: SharedSyncResult['sharedStats'] = {};
         const errors: SharedSyncError[] = [];
+        const declarations = [] as import('./ManagedFileSynchronizer').ManagedFileDeclaration[];
 
         const dirsResult = this.backend.resolveAgentProjectSkillDirs(manifest.agents);
         if (!dirsResult.ok) {
@@ -48,6 +47,7 @@ export default class SyncSharedFiles {
                 managedNewLocalPaths: {},
                 sharedStats: {},
                 sharedFileHashesBySource: {},
+                managedFileHashesBySource: {},
                 errors: [{ message: dirsResult.error }],
             };
         }
@@ -61,7 +61,7 @@ export default class SyncSharedFiles {
         });
 
         Object.entries(discovered).forEach(([source, meta]) => {
-            const copyResult = this.copier.copySourceSharedFiles({
+            const copyResult = this.copier.collectSourceSharedFiles({
                 source,
                 skillEntries: meta.skillEntries,
                 agentSkillDirs: dirsResult.dirs,
@@ -69,23 +69,11 @@ export default class SyncSharedFiles {
             });
             managedNewLocalPaths[source] = copyResult.managedLocalPaths;
             sharedFileHashesBySource[source] = copyResult.fileHashes;
+            managedFileHashesBySource[source] = copyResult.managedFileHashes;
             sharedStats[source] = copyResult.stats;
+            declarations.push(...copyResult.declarations);
             errors.push(...copyResult.errors);
         });
-
-        const conflicts = this.ownership.detectOwnershipConflicts(managedNewLocalPaths);
-        if (conflicts.length) {
-            return {
-                sharedFailed: true,
-                managedNewLocalPaths,
-                sharedStats,
-                sharedFileHashesBySource,
-                errors: [{
-                    message: 'Shared file ownership conflicts detected.',
-                    details: conflicts,
-                }],
-            };
-        }
 
         if (errors.length > 0) {
             return {
@@ -93,18 +81,59 @@ export default class SyncSharedFiles {
                 managedNewLocalPaths,
                 sharedStats,
                 sharedFileHashesBySource,
+                managedFileHashesBySource,
                 errors,
             };
         }
 
-        const removedFiles = this.pruner.pruneStaleManagedFiles(managedOldLocalPaths, managedNewLocalPaths);
+        const allNewPaths = new Set(Object.values(managedNewLocalPaths).flat());
+        const stalePaths = Object.entries(managedOldLocalPaths)
+            .flatMap(([source, paths]) => {
+                const newPaths = Object.hasOwn(managedNewLocalPaths, source) ? managedNewLocalPaths[source] : [];
+                return paths.filter(filePath => !newPaths.includes(filePath) && !allNewPaths.has(filePath));
+            })
+            .sort((a, b) => a.localeCompare(b));
+        const planResult = this.synchronizer.plan({ files: declarations, removals: stalePaths });
+        if (!planResult.ok) {
+            return {
+                sharedFailed: true,
+                managedNewLocalPaths,
+                sharedStats,
+                sharedFileHashesBySource,
+                managedFileHashesBySource,
+                errors: [{
+                    message: planResult.error === 'Managed file ownership conflicts detected.'
+                        ? 'Shared file ownership conflicts detected.'
+                        : planResult.error,
+                    details: planResult.details,
+                }],
+            };
+        }
+
+        try {
+            this.synchronizer.apply(planResult.plan);
+        }
+        catch (error) {
+            return {
+                sharedFailed: true,
+                managedNewLocalPaths,
+                sharedStats,
+                sharedFileHashesBySource,
+                managedFileHashesBySource,
+                errors: [{
+                    message: 'Failed while applying managed shared files.',
+                    details: error instanceof Error ? error.message : String(error),
+                }],
+            };
+        }
 
         return {
             sharedFailed: false,
             managedNewLocalPaths,
             sharedStats,
             sharedFileHashesBySource,
-            removedFiles,
+            managedFileHashesBySource,
+            removedFiles: planResult.plan.removals.length,
             errors: [],
         };
     }

@@ -15,6 +15,29 @@ import type {
 } from '../src/core/types';
 
 describe('PublishService', () => {
+    test('rejects subagent-only manifests before preparing publish context', () => {
+        let prepareCalled = false;
+        const service = new PublishService({
+            backend: createBackend(),
+            manifestStore: createManifestStore(),
+            contextResolver: {
+                prepare(): PreparePublishContextNoop {
+                    prepareCalled = true;
+                    throw new Error('publish discovery should not run');
+                },
+            },
+        });
+
+        expect(service.publish({
+            manifest: { agents: [], subagents: ['opencode'], sources: [] },
+            lock: createLock(),
+        })).toEqual({
+            ok: false,
+            error: 'Publish currently supports skills only; subagents are sync-only.',
+        });
+        expect(prepareCalled).toBe(false);
+    });
+
     test('returns prepared noop result without touching workspace', () => {
         const noopResult = new PublishResultBuilder().buildBase({
             source: 'upstream',

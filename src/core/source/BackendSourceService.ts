@@ -1,9 +1,12 @@
 import SkillDiscovery from './SkillDiscovery';
+import SubagentDiscovery from './SubagentDiscovery';
+import type { SubagentEntry } from '../types/manifest';
 import type {
     CollectSharedFilesSuccess,
     FailureResult,
     ListSkillsSuccess,
     ResolvedSource,
+    SourceDiscoverySuccess,
 } from '../types/discovery';
 
 export interface BackendSourceListSkillsOptions {
@@ -12,7 +15,7 @@ export interface BackendSourceListSkillsOptions {
     resolvedCommit?: string | null;
 }
 
-export type BackendSourceDiscovery = Pick<SkillDiscovery, 'listSkills' | 'resolveSource' | 'collectSharedFiles'>;
+export type BackendSourceDiscovery = Pick<SkillDiscovery, 'listSkills' | 'resolveSource' | 'collectSharedFiles'> & Partial<Pick<SkillDiscovery, 'createWorkspace' | 'listSkillsInWorkspace'>>;
 type SkillDiscoveryFactory = (options?: BackendSourceListSkillsOptions) => BackendSourceDiscovery;
 
 export default class BackendSourceService {
@@ -38,5 +41,75 @@ export default class BackendSourceService {
 
     public collectSharedFiles(source: string, sharedFiles: string[], options: { resolvedCommit?: string | null } = {}): CollectSharedFilesSuccess | FailureResult {
         return this.createDiscovery().collectSharedFiles(source, sharedFiles, options);
+    }
+
+    public discoverSource(
+        source: string,
+        {
+            skills = null,
+            subagents = null,
+            mode = 'update',
+            resolvedCommit = null,
+            lockedSubagentEntries = [],
+            projectRoot,
+        }: {
+            skills?: string[] | null;
+            subagents?: string[] | null;
+            mode?: 'update' | 'locked';
+            resolvedCommit?: string | null;
+            lockedSubagentEntries?: SubagentEntry[];
+            projectRoot?: string;
+        } = {},
+    ): SourceDiscoverySuccess | FailureResult {
+        const discovery = this.createDiscovery({ includeInternal: Boolean(skills?.length) });
+        if (!discovery.createWorkspace || !discovery.listSkillsInWorkspace) {
+            return { ok: false, error: 'Combined source discovery is not available.' };
+        }
+
+        return discovery.createWorkspace().withWorkspace(
+            source,
+            { resolvedCommit, detectDefaultBranch: true },
+            (workspace) => {
+                const listedSkills = discovery.listSkillsInWorkspace?.(source, workspace);
+                const skillResult = listedSkills?.ok
+                    ? listedSkills
+                    : {
+                        ok: true as const,
+                        skills: [],
+                        skillEntries: [],
+                        sharedFileHashes: [],
+                        managedSharedFileHashes: [],
+                        aliasMap: new Map<string, string>(),
+                        resolved: {
+                            requestedRef: workspace.resolved.ref ?? null,
+                            defaultBranch: workspace.defaultBranch,
+                            resolvedRef: workspace.resolved.ref ?? workspace.currentBranch ?? workspace.defaultBranch,
+                            resolvedCommit: workspace.resolvedCommit,
+                            subpath: workspace.resolved.subpath ?? null,
+                            resolvedAt: new Date().toISOString(),
+                        },
+                    };
+                if (!listedSkills?.ok && (skills?.length ?? 0) > 0) {
+                    return listedSkills;
+                }
+
+                const subagentResult = new SubagentDiscovery().discoverWorkspace(workspace, {
+                    selected: subagents,
+                    projectRoot,
+                    mode,
+                    lockedEntries: lockedSubagentEntries,
+                });
+                if (!subagentResult.ok) {
+                    return subagentResult;
+                }
+
+                return {
+                    ...skillResult,
+                    listedAt: new Date().toISOString(),
+                    subagents: subagentResult.subagents,
+                    subagentSharedFiles: subagentResult.sharedFiles,
+                };
+            },
+        ) as SourceDiscoverySuccess | FailureResult;
     }
 }

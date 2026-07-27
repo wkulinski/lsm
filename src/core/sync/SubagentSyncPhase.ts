@@ -1,0 +1,114 @@
+import type { DiscoveredSources, LockData, SubagentEntry, SubagentSyncResult } from '../types';
+import SubagentManagedFileAdapter from '../subagents/SubagentManagedFileAdapter';
+import ManagedFileSynchronizer, { type ManagedFileBaseline, type ManagedFilePlan } from './ManagedFileSynchronizer';
+
+export interface SubagentSyncPlanSuccess {
+    ok: true;
+    plan: ManagedFilePlan;
+    result: SubagentSyncResult;
+}
+
+export interface SubagentSyncPlanFailure {
+    ok: false;
+    error: string;
+    details?: unknown;
+}
+
+export type SubagentSyncPlanResult = SubagentSyncPlanSuccess | SubagentSyncPlanFailure;
+
+export default class SubagentSyncPhase {
+    private readonly synchronizer: ManagedFileSynchronizer;
+    private readonly adapter: SubagentManagedFileAdapter;
+
+    public constructor({ root, synchronizer, adapter }: {
+        root: string;
+        synchronizer?: ManagedFileSynchronizer;
+        adapter?: SubagentManagedFileAdapter;
+    }) {
+        this.synchronizer = synchronizer ?? new ManagedFileSynchronizer({ root });
+        this.adapter = adapter ?? new SubagentManagedFileAdapter();
+    }
+
+    public plan({ lock, discovered, force = false }: { lock: LockData; discovered: DiscoveredSources; force?: boolean }): SubagentSyncPlanResult {
+        const declarations = Object.entries(discovered).flatMap(([source, meta]) => this.adapter.declarations({
+            source,
+            subagents: meta.subagents ?? [],
+            sharedFiles: meta.subagentSharedFiles ?? [],
+        }));
+        const newTargets = new Set(declarations.map(declaration => declaration.targetPath));
+        const baselines: ManagedFileBaseline[] = [];
+        const removals = new Set<string>();
+
+        Object.values(lock.sources).forEach((sourceMeta) => {
+            (sourceMeta.subagentEntries ?? []).forEach((entry: SubagentEntry) => {
+                baselines.push({ targetPath: entry.targetPath, hash: entry.hash });
+                if (!newTargets.has(entry.targetPath)) {
+                    removals.add(entry.targetPath);
+                }
+            });
+            (sourceMeta.sharedEntries ?? [])
+                .filter(entry => entry.owners.some(owner => owner.startsWith('subagent:')))
+                .forEach((entry) => {
+                    baselines.push({ targetPath: entry.targetPath, hash: entry.hash });
+                    if (!newTargets.has(entry.targetPath) && !entry.owners.some(owner => owner.startsWith('skill:'))) {
+                        removals.add(entry.targetPath);
+                    }
+                });
+        });
+
+        const planned = this.synchronizer.plan({
+            files: declarations,
+            removals: [...removals],
+            baselines: force ? [] : baselines,
+            rejectUnmanaged: !force,
+        });
+        if (!planned.ok) {
+            return planned;
+        }
+
+        const result = this.resultForPlan(planned.plan, discovered);
+        return { ok: true, plan: planned.plan, result };
+    }
+
+    public synchronize({ lock, discovered, force = false }: { lock: LockData; discovered: DiscoveredSources; force?: boolean }): SubagentSyncResult {
+        const planned = this.plan({ lock, discovered, force });
+        if (!planned.ok) {
+            return {
+                subagentFailed: true,
+                detected: this.detected(discovered),
+                installed: 0,
+                removed: 0,
+                sharedFiles: 0,
+                errors: [{ message: planned.error, details: planned.details }],
+            };
+        }
+
+        try {
+            this.synchronizer.apply(planned.plan);
+            return planned.result;
+        }
+        catch (error) {
+            return {
+                ...planned.result,
+                subagentFailed: true,
+                errors: [{ message: 'Failed while applying managed subagents.', details: error instanceof Error ? error.message : String(error) }],
+            };
+        }
+    }
+
+    private resultForPlan(plan: ManagedFilePlan, discovered: DiscoveredSources): SubagentSyncResult {
+        const sharedFiles = plan.files.filter(file => file.targetPath.startsWith('.agents/skills/_shared/')).length;
+        return {
+            subagentFailed: false,
+            detected: this.detected(discovered),
+            installed: plan.files.length - sharedFiles,
+            removed: plan.removals.length,
+            sharedFiles,
+            errors: [],
+        };
+    }
+
+    private detected(discovered: DiscoveredSources): number {
+        return Object.values(discovered).reduce((count, meta) => count + (meta.subagents?.length ?? 0), 0);
+    }
+}

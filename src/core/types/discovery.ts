@@ -1,4 +1,4 @@
-import type { FileHashEntry, ResolvedSourceMeta, SkillEntry } from './manifest';
+import type { FileHashEntry, ManagedFileHash, ManagedFileHashEntry, ResolvedSourceMeta, SkillEntry } from './manifest';
 
 export interface SkillDefinition {
     name: string;
@@ -27,6 +27,7 @@ export interface ListSkillsSuccess {
     skills: string[];
     skillEntries: SkillEntry[];
     sharedFileHashes: FileHashEntry[];
+    managedSharedFileHashes?: ManagedFileHashEntry[];
     aliasMap: Map<string, string>;
     resolved: ResolvedSourceMeta;
 }
@@ -40,6 +41,7 @@ export interface FailureResult {
 export interface SharedFileContentEntry {
     path: string;
     content: Buffer;
+    executable: boolean;
 }
 
 export interface CollectSharedFilesSuccess {
@@ -50,6 +52,7 @@ export interface CollectSharedFilesSuccess {
 export interface SkillDirectoryFile {
     path: string;
     content: Buffer;
+    executable: boolean;
 }
 
 export interface CollectedSkillDirectory {
@@ -68,6 +71,9 @@ export interface DiscoveredSourceMeta {
     skills: string[];
     skillEntries: SkillEntry[];
     sharedFileHashes: FileHashEntry[];
+    managedSharedFileHashes?: ManagedFileHashEntry[];
+    subagents?: SubagentDefinition[];
+    subagentSharedFiles?: SharedFileContentEntry[];
     missingRequested: string[];
     resolved: ResolvedSourceMeta;
 }
@@ -80,4 +86,26 @@ export interface LocalSkill {
     dirName: string;
     sourcePath: string;
     sharedFiles: string[];
+}
+
+export interface SubagentDefinition {
+    name: string;
+    description: string | null;
+    sourcePath: string;
+    targetPath: string;
+    sharedFiles: string[];
+    content: Buffer;
+    hash: ManagedFileHash;
+}
+
+export interface SubagentDiscoverySuccess {
+    ok: true;
+    subagents: SubagentDefinition[];
+    sharedFiles: SharedFileContentEntry[];
+}
+
+export interface SourceDiscoverySuccess extends ListSkillsSuccess {
+    listedAt: string;
+    subagents: SubagentDefinition[];
+    subagentSharedFiles: SharedFileContentEntry[];
 }

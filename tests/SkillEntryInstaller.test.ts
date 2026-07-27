@@ -26,8 +26,8 @@ describe('SkillEntryInstaller', () => {
                     directories: [{
                         sourcePath: '.agents/skills/example',
                         files: [
-                            { path: 'SKILL.md', content: Buffer.from('# Example\n') },
-                            { path: 'nested/config.json', content: Buffer.from('{"enabled":true}\n') },
+                            { path: 'SKILL.md', content: Buffer.from('# Example\n'), executable: true },
+                            { path: 'nested/config.json', content: Buffer.from('{"enabled":true}\n'), executable: false },
                         ],
                     }],
                 };
@@ -50,6 +50,8 @@ describe('SkillEntryInstaller', () => {
             });
             expect(fs.readFileSync(path.join(tempDir, '.agents', 'skills', 'example', 'SKILL.md'), 'utf8')).toBe('# Example\n');
             expect(fs.readFileSync(path.join(tempDir, '.agents', 'skills', 'example', 'nested', 'config.json'), 'utf8')).toBe('{"enabled":true}\n');
+            expect(fs.statSync(path.join(tempDir, '.agents', 'skills', 'example', 'SKILL.md')).mode & 0o111).toBe(0o111);
+            expect(fs.statSync(path.join(tempDir, '.agents', 'skills', 'example', 'nested', 'config.json')).mode & 0o111).toBe(0);
         }
         finally {
             if (originalCollectDescriptor) {
@@ -102,7 +104,7 @@ describe('SkillEntryInstaller', () => {
                 ok: true,
                 directories: [{
                     sourcePath: '.agents/skills/example',
-                    files: [{ path: 'SKILL.md', content: Buffer.from('# Example\n') }],
+                    files: [{ path: 'SKILL.md', content: Buffer.from('# Example\n'), executable: false }],
                 }],
             });
 

@@ -1,13 +1,13 @@
 import { describe, expect, test } from 'vitest';
 
-import LockNormalizer, { LOCK_SCHEMA_VERSION } from '../src/core/manifest/LockNormalizer';
+import LockNormalizer, { LEGACY_LOCK_SCHEMA_VERSION } from '../src/core/manifest/LockNormalizer';
 
 describe('LockNormalizer', () => {
     test('normalizes lock agents, sources, hashes, shared files, and resolved metadata', () => {
         const normalizer = new LockNormalizer({ lockFileName: 'skills.lock.json' });
 
         expect(normalizer.normalize({
-            schemaVersion: LOCK_SCHEMA_VERSION,
+            schemaVersion: LEGACY_LOCK_SCHEMA_VERSION,
             agents: [' codex ', 'cursor', 'codex'],
             sources: {
                 upstream: {
@@ -46,8 +46,9 @@ describe('LockNormalizer', () => {
                 },
             },
         })).toEqual({
-            schemaVersion: LOCK_SCHEMA_VERSION,
+            schemaVersion: LEGACY_LOCK_SCHEMA_VERSION,
             agents: ['codex', 'cursor'],
+            subagents: [],
             sources: {
                 upstream: {
                     mode: 'explicit',
@@ -79,6 +80,21 @@ describe('LockNormalizer', () => {
                         { path: '.agents/skills/shared/a.md', sha256: 'sha-a' },
                         { path: '.agents/skills/shared/z.md', sha256: 'sha-z' },
                     ],
+                    subagentEntries: [],
+                    sharedEntries: [
+                        {
+                            sourcePath: '.agents/skills/shared/a.md',
+                            targetPath: '.agents/skills/shared/a.md',
+                            hash: { sha256: 'sha-a', executable: false },
+                            owners: ['skill:Beta'],
+                        },
+                        {
+                            sourcePath: '.agents/skills/shared/z.md',
+                            targetPath: '.agents/skills/shared/z.md',
+                            hash: { sha256: 'sha-z', executable: false },
+                            owners: ['skill:Beta'],
+                        },
+                    ],
                     resolved: {
                         requestedRef: 'main',
                         defaultBranch: 'main',
@@ -99,12 +115,73 @@ describe('LockNormalizer', () => {
             schemaVersion: 4,
             agents: [],
             sources: {},
-        })).toThrow('"custom.lock.json": unsupported schemaVersion=4; expected 5');
+        })).toThrow('"custom.lock.json": unsupported schemaVersion=4; expected 5 or 6');
         expect(() => normalizer.normalizeRelativePath('../secret', 'lock.skillEntries.sourcePath')).toThrow(
             '"custom.lock.json": "lock.skillEntries.sourcePath" cannot contain ".."',
         );
         expect(() => normalizer.normalizeRelativePath('/absolute', 'lock.skillEntries.sourcePath')).toThrow(
             '"custom.lock.json": "lock.skillEntries.sourcePath" must be a relative path',
         );
+    });
+
+    test('normalizes and sorts v6 managed entries', () => {
+        const normalizer = new LockNormalizer({ lockFileName: 'skills.lock.json' });
+
+        expect(normalizer.normalize({
+            schemaVersion: 6,
+            agents: ['codex'],
+            subagents: ['opencode'],
+            sources: {
+                upstream: {
+                    mode: 'explicit',
+                    skillEntries: [],
+                    subagentEntries: [{
+                        name: 'reviewer',
+                        sourcePath: '.opencode/agent/reviewer.md',
+                        targetPath: '.opencode/agents/reviewer.md',
+                        sharedFiles: ['.agents/skills/_shared/z.md', '.agents/skills/_shared/a.md'],
+                        hash: { sha256: ' agent ', executable: false },
+                    }],
+                    sharedEntries: [{
+                        sourcePath: '.agents/skills/_shared/z.md',
+                        targetPath: '.agents/skills/_shared/z.md',
+                        hash: { sha256: ' shared ', executable: true },
+                        owners: ['subagent:reviewer', 'skill:code-implement'],
+                    }],
+                },
+            },
+        })).toEqual({
+            schemaVersion: 6,
+            agents: ['codex'],
+            subagents: ['opencode'],
+            sources: {
+                upstream: {
+                    mode: 'explicit',
+                    listedAt: null,
+                    skillEntries: [],
+                    subagentEntries: [{
+                        name: 'reviewer',
+                        sourcePath: '.opencode/agent/reviewer.md',
+                        targetPath: '.opencode/agents/reviewer.md',
+                        sharedFiles: ['.agents/skills/_shared/a.md', '.agents/skills/_shared/z.md'],
+                        hash: { sha256: 'agent', executable: false },
+                    }],
+                    sharedEntries: [{
+                        sourcePath: '.agents/skills/_shared/z.md',
+                        targetPath: '.agents/skills/_shared/z.md',
+                        hash: { sha256: 'shared', executable: true },
+                        owners: ['skill:code-implement', 'subagent:reviewer'],
+                    }],
+                    resolved: {
+                        requestedRef: null,
+                        defaultBranch: null,
+                        resolvedRef: null,
+                        resolvedCommit: null,
+                        subpath: null,
+                        resolvedAt: null,
+                    },
+                },
+            },
+        });
     });
 });
