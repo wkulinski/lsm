@@ -59,7 +59,7 @@ export default class SyncDiscovery {
             const discoveredSubagents = listed.subagents;
             const subagentSharedFiles = listed.subagentSharedFiles;
 
-            if (skills?.length) {
+            if (skills !== null) {
                 const { desired, missing } = this.resolveDesiredSkills(skills, aliasMap);
                 const desiredUniq = Helpers.sortUniq(desired);
                 const desiredSet = new Set(desiredUniq.map(name => name.toLowerCase()));

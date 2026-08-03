@@ -33,8 +33,9 @@ describe('manager integration', () => {
             createSourceRepository(sourceDir);
             fs.mkdirSync(workspaceDir, { recursive: true });
             fs.writeFileSync(path.join(workspaceDir, 'skills.json'), JSON.stringify({
+                schemaVersion: 2,
                 agents: ['codex'],
-                sources: [{ source: sourceName }],
+                sources: [{ source: sourceName, skills: true }],
             }), 'utf8');
             fs.writeFileSync(path.join(workspaceDir, 'skills.lock.json'), JSON.stringify({
                 schemaVersion: 5,
@@ -91,8 +92,9 @@ describe('manager integration', () => {
             createSourceRepository(sourceDir);
             fs.mkdirSync(workspaceDir, { recursive: true });
             fs.writeFileSync(path.join(workspaceDir, 'skills.json'), JSON.stringify({
+                schemaVersion: 2,
                 agents: ['codex'],
-                sources: [{ source: sourceName }],
+                sources: [{ source: sourceName, skills: true }],
             }), 'utf8');
             fs.writeFileSync(path.join(workspaceDir, 'skills.lock.json'), JSON.stringify({
                 schemaVersion: 5,
@@ -163,8 +165,9 @@ describe('manager integration', () => {
             createSourceRepository(sourceDir);
             fs.mkdirSync(workspaceDir, { recursive: true });
             fs.writeFileSync(path.join(workspaceDir, 'skills.json'), JSON.stringify({
+                schemaVersion: 2,
                 agents: ['codex'],
-                sources: [{ source: sourceName }],
+                sources: [{ source: sourceName, skills: true }],
             }), 'utf8');
             fs.writeFileSync(path.join(workspaceDir, 'skills.lock.json'), JSON.stringify({
                 schemaVersion: 5,
@@ -248,8 +251,9 @@ describe('manager integration', () => {
             createSourceRepository(sourceDir);
             fs.mkdirSync(workspaceDir, { recursive: true });
             fs.writeFileSync(path.join(workspaceDir, 'skills.json'), JSON.stringify({
+                schemaVersion: 2,
                 agents: ['codex'],
-                sources: [{ source: sourceName, publish: { createPr: false } }],
+                sources: [{ source: sourceName, skills: true, publish: { createPr: false } }],
             }), 'utf8');
             fs.writeFileSync(path.join(workspaceDir, 'skills.lock.json'), JSON.stringify({
                 schemaVersion: 5,

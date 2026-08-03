@@ -3,6 +3,8 @@ import type { ManifestData } from '../types';
 
 interface UnknownRecord { [key: string]: unknown }
 
+export const MANIFEST_SCHEMA_VERSION = 2;
+
 export default class ManifestNormalizer {
     private readonly manifestFileName: string;
 
@@ -12,6 +14,10 @@ export default class ManifestNormalizer {
 
     public normalize(json: unknown): ManifestData {
         const record = json as UnknownRecord;
+        if (record.schemaVersion !== MANIFEST_SCHEMA_VERSION) {
+            Helpers.die(`"${this.manifestFileName}": "schemaVersion" must be ${String(MANIFEST_SCHEMA_VERSION)}`);
+        }
+
         const agents = this.normalizeStringArray('agents', record.agents, { allowEmpty: true, allowUndefined: true });
         const subagents = this.normalizeSubagentTargets(record.subagents);
         if (agents.length === 0 && subagents.length === 0) {
@@ -42,11 +48,6 @@ export default class ManifestNormalizer {
             }
             normalizedSources.add(source);
 
-            const hasSkills = Object.hasOwn(e, 'skills');
-            if (hasSkills && !Array.isArray(e.skills)) {
-                Helpers.die(`"${this.manifestFileName}": "skills" must be an array when present`);
-            }
-
             if (Object.hasOwn(e, 'copies')) {
                 Helpers.die(`"${this.manifestFileName}": "copies" is no longer supported; use skill frontmatter "shared_files"`);
             }
@@ -56,9 +57,7 @@ export default class ManifestNormalizer {
                 Helpers.die(`"${this.manifestFileName}": "publish" must be an object when present`);
             }
 
-            const skills = Array.isArray(e.skills)
-                ? Helpers.sortUniq((e.skills as unknown[]).map(x => String(x).trim()).filter(Boolean))
-                : null;
+            const skills = this.normalizeSourceSelection('skills', e.skills);
             const subagentSelection = this.normalizeSourceSubagents(e.subagents);
 
             const publish = hasPublish
@@ -112,10 +111,22 @@ export default class ManifestNormalizer {
     }
 
     private normalizeSourceSubagents(value: unknown): string[] | null {
-        if (value === null || typeof value === 'undefined') {
+        return this.normalizeSourceSelection('subagents', value);
+    }
+
+    private normalizeSourceSelection(name: string, value: unknown): string[] | null {
+        if (value === true) {
             return null;
         }
-        return this.normalizeStringArray('subagents', value, { allowEmpty: true });
+        if (value === false || typeof value === 'undefined' || Array.isArray(value)) {
+            if (Array.isArray(value)) {
+                return Helpers.sortUniq(value.map(x => String(x).trim()).filter(Boolean));
+            }
+            return [];
+        }
+
+        Helpers.die(`"${this.manifestFileName}": "${name}" must be true, false, or an array`);
+        return [];
     }
 
     public normalizeManifestPublish(publish: UnknownRecord): { branchPrefix: string | null; createPr: boolean | null } {

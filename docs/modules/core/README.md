@@ -41,9 +41,13 @@ The manifest keeps skill and subagent configuration separate:
 
 - top-level `agents` selects skill integrations;
 - top-level `subagents: ["opencode"]` enables OpenCode subagent sync;
-- source-level `skills` selects skills;
-- source-level `subagents` selects subagent names, where missing/`null` means
-  all, `[]` means none, and a non-empty array means explicit selection.
+- source-level `skills` and `subagents` use the same selection contract: missing,
+  `false`, and `[]` mean none; `true` means all; a non-empty array means
+  explicit selection.
+
+Manifest files use `schemaVersion: 2`. Existing manifests are migrated
+manually; omitted selections that previously meant all must be written as
+`true`.
 
 Only Markdown files under `.opencode/agent/` and `.opencode/agents/` are
 discovered. The effective name comes from optional frontmatter or the path

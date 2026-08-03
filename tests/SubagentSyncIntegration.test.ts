@@ -34,6 +34,7 @@ describe('subagent sync integration', () => {
             createSubagentSourceRepository(sourceDir);
             fs.mkdirSync(workspaceDir, { recursive: true });
             fs.writeFileSync(path.join(workspaceDir, 'skills.json'), JSON.stringify({
+                schemaVersion: 2,
                 agents: [],
                 subagents: ['opencode'],
                 sources: [{ source: sourceName, skills: [], subagents: ['reviewer'] }],
@@ -123,6 +124,7 @@ describe('subagent sync integration', () => {
             createSubagentSourceRepository(sourceDir);
             fs.mkdirSync(workspaceDir, { recursive: true });
             fs.writeFileSync(path.join(workspaceDir, 'skills.json'), JSON.stringify({
+                schemaVersion: 2,
                 agents: ['codex'],
                 subagents: ['opencode'],
                 sources: [{ source: sourceName, skills: ['Example'], subagents: ['reviewer'] }],
@@ -174,6 +176,7 @@ describe('subagent sync integration', () => {
             createSubagentSourceRepository(sourceDir);
             fs.mkdirSync(workspaceDir, { recursive: true });
             fs.writeFileSync(path.join(workspaceDir, 'skills.json'), JSON.stringify({
+                schemaVersion: 2,
                 agents: [],
                 subagents: ['opencode'],
                 sources: [{ source: sourceName, skills: [], subagents: ['missing'] }],
@@ -212,6 +215,7 @@ describe('subagent sync integration', () => {
             fs.mkdirSync(workspaceDir, { recursive: true });
             const writeManifest = (selection: string[]): void => {
                 fs.writeFileSync(path.join(workspaceDir, 'skills.json'), JSON.stringify({
+                    schemaVersion: 2,
                     agents: [],
                     subagents: ['opencode'],
                     sources: [{ source: sourceName, skills: [], subagents: selection }],

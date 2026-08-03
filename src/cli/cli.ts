@@ -15,7 +15,7 @@ export async function runCli(argv: string[]): Promise<number> {
 
     program
         .command('sync')
-        .description('Synchronize managed skills from manifest sources')
+        .description('Synchronize managed skills and OpenCode subagents from manifest sources')
         .option('--manifest <path>', 'Path to skills manifest')
         .option('--update', 'Resolve current upstream sources and update the lock')
         .option('--force', 'Continue despite local change conflicts')
@@ -56,7 +56,7 @@ export async function runCli(argv: string[]): Promise<number> {
 }
 
 function normalizeCliArgv(argv: string[]): string[] {
-    if (argv.length === 0 || argv[0]?.startsWith('-')) {
+    if (argv.length === 0 || (argv[0]?.startsWith('-') && argv[0] !== '-h' && argv[0] !== '--help')) {
         return ['sync', ...argv];
     }
 

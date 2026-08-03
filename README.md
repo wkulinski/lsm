@@ -41,10 +41,12 @@ Przykładowy `skills.json`:
 
 ```json
 {
+  "schemaVersion": 2,
   "agents": ["codex"],
   "sources": [
     {
-      "source": "https://github.com/example/llm-skills"
+      "source": "https://github.com/example/llm-skills",
+      "skills": true
     }
   ]
 }
@@ -60,6 +62,7 @@ Przykładowy manifest mieszany:
 
 ```json
 {
+  "schemaVersion": 2,
   "agents": ["codex"],
   "subagents": ["opencode"],
   "sources": [
@@ -73,10 +76,14 @@ Przykładowy manifest mieszany:
 ```
 
 `agents` wybiera integracje dla skilli, natomiast `subagents` w manifeście
-włącza synchronizację plików OpenCode. Na poziomie źródła brak pola lub `null`
-oznacza wszystkie znalezione subagenty, `[]` oznacza żadne, a niepusta tablica
-jest jawną selekcją po nazwie.
+włącza synchronizację plików OpenCode. Na poziomie źródła zarówno `skills`, jak
+i `subagents` mają jawną selekcję: brak pola, `false` lub `[]` oznacza brak
+elementów, `true` oznacza wszystkie, a niepusta tablica jest selekcją po nazwie.
 Manifest tylko z subagentami może użyć `"agents": []`; nie wymaga fazy skilli.
+
+`skills.json` musi mieć `"schemaVersion": 2`. Istniejące manifesty należy
+zaktualizować ręcznie: jeśli brak pola wcześniej oznaczał wszystkie elementy,
+dodaj jawne `true`.
 
 Źródło może zawierać `.opencode/agent/`, `.opencode/agents/` albo oba katalogi.
 Projekt używa istniejącego wariantu, domyślnie `.opencode/agents/`, gdy nie ma
@@ -107,7 +114,7 @@ a manifest zawierający wyłącznie subagenty kończy się komunikatem:
 
 ### `sync`
 
-Synchronizuje stan lokalny z manifestem i źródłami upstream.
+Synchronizuje lokalne skille i subagenty OpenCode z manifestem oraz źródłami upstream.
 
 Opcje:
 - `--manifest <path>`: ścieżka do alternatywnego pliku manifestu
@@ -171,6 +178,17 @@ node bin/lsm publish \
   --remove-skill old-skill \
   --confirm-deletes \
   --no-pr
+```
+
+### Kolorowanie outputu
+
+W interaktywnym terminalu komunikaty CLI używają kolorów i wyróżnień sekcji.
+Kolory są automatycznie wyłączane dla potoków i CI. Można je wyłączyć jawnie
+przez `NO_COLOR` albo wymusić przez `FORCE_COLOR`:
+
+```bash
+NO_COLOR=1 node bin/lsm sync
+FORCE_COLOR=1 node bin/lsm sync
 ```
 
 ## Biblioteka

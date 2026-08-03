@@ -22,6 +22,7 @@ describe('RuntimeFactory', () => {
                 createdTemplates: ['skills.json', 'skills.lock.json'],
             });
             expect(readJson(path.join(tempDir, 'skills.json'))).toEqual({
+                schemaVersion: 2,
                 agents: [],
                 sources: [],
             });
@@ -70,6 +71,7 @@ describe('RuntimeFactory', () => {
 
         try {
             writeJson(path.join(tempDir, 'skills.json'), {
+                schemaVersion: 2,
                 agents: ['codex', 'cursor'],
                 sources: [],
             });

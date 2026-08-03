@@ -105,6 +105,34 @@ describe('SyncDiscovery', () => {
         });
     });
 
+    test('keeps an explicitly empty skill selection empty', () => {
+        const calls: ListSkillsCall[] = [];
+        const discovery = new SyncDiscovery({
+            backend: createBackend({
+                calls,
+                results: {
+                    upstream: createListedSkillsResult({
+                        skillEntries: [createSkillEntry({ name: 'Alpha', sourcePath: '.agents/skills/alpha' })],
+                        sharedFileHashes: [{ path: '.agents/skills/shared/common.md', sha256: 'abc123' }],
+                    }),
+                },
+            }),
+        });
+
+        const result = discovery.discover(createManifest({
+            sources: [{ source: 'upstream', skills: [], publish: { branchPrefix: null, createPr: null } }],
+        }));
+
+        expect(calls).toEqual([{ source: 'upstream', options: { includeInternal: false } }]);
+        expect(result.discovered.upstream).toMatchObject({
+            mode: 'explicit',
+            skills: [],
+            skillEntries: [],
+            sharedFileHashes: [],
+            missingRequested: [],
+        });
+    });
+
     test('throws backend list errors with details', () => {
         const discovery = new SyncDiscovery({
             backend: createBackend({

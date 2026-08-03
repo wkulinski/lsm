@@ -14,6 +14,7 @@ describe('Manifest', () => {
             const manifestPath = path.join(tempDir, 'skills.json');
             const lockPath = path.join(tempDir, 'skills.lock.json');
             writeJson(manifestPath, {
+                schemaVersion: 2,
                 agents: [' cursor ', 'codex', 'codex'],
                 sources: [{
                     source: ' owner/repo ',
@@ -68,7 +69,7 @@ describe('Manifest', () => {
                 sources: [{
                     source: 'owner/repo',
                     skills: ['alpha', 'beta'],
-                    subagents: null,
+                    subagents: [],
                     publish: {
                         branchPrefix: 'publish',
                         createPr: false,
@@ -140,18 +141,21 @@ describe('Manifest', () => {
             const store = new Manifest({ manifestPath, lockPath });
 
             writeJson(manifestPath, {
+                schemaVersion: 2,
                 agents: ['codex'],
                 sources: 'owner/repo',
             });
             expect(() => store.loadManifest()).toThrow('"sources" must be an array');
 
             writeJson(manifestPath, {
+                schemaVersion: 2,
                 agents: ['codex'],
                 sources: ['owner/repo'],
             });
             expect(() => store.loadManifest()).toThrow('each source entry must be an object');
 
             writeJson(manifestPath, {
+                schemaVersion: 2,
                 agents: ['codex'],
                 sources: [{
                     source: 'owner/repo',

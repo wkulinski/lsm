@@ -10,6 +10,7 @@ import type {
     SyncPreflight,
 } from '../../core/types';
 import { isObject, printError } from './errorRenderer';
+import { colorize, writeBullet, writeSection } from './terminalFormatter';
 
 export function renderSyncEvent(event: ManagerEvent): void {
     switch (event.type) {
@@ -17,7 +18,7 @@ export function renderSyncEvent(event: ManagerEvent): void {
             printHeader(event.header);
             return;
         case 'sync-discover-start':
-            process.stdout.write('\n-- Discovering skills (prune-missing enabled) --\n');
+            writeSection(process.stdout, '-- Discovering skills (prune-missing enabled) --', 'info');
             return;
         case 'sync-plan':
             printSyncPlan(event.plan);
@@ -26,18 +27,18 @@ export function renderSyncEvent(event: ManagerEvent): void {
             printPreflight(event.preflight, event.force);
             return;
         case 'sync-add-start':
-            process.stdout.write('\n-- Installing desired skills to whitelisted agents --\n');
+            writeSection(process.stdout, '-- Installing desired skills to whitelisted agents --', 'info');
             return;
         case 'sync-add-source':
-            process.stdout.write(`\n>>> Source: ${event.source}\n`);
-            process.stdout.write(`    Mode  : ${event.mode}\n`);
-            process.stdout.write(`    Skills: ${String(event.skillCount)}\n`);
+            writeSection(process.stdout, `>>> Source: ${event.source}`, 'accent');
+            process.stdout.write(`    ${colorize('Mode  :', 'muted')} ${event.mode}\n`);
+            process.stdout.write(`    ${colorize('Skills:', 'muted')} ${String(event.skillCount)}\n`);
             return;
         case 'sync-shared-start':
-            process.stdout.write('\n-- Syncing shared files declared in skill frontmatter --\n');
+            writeSection(process.stdout, '-- Syncing shared files declared in skill frontmatter --', 'info');
             return;
         case 'sync-subagents':
-            process.stdout.write('\n-- Syncing OpenCode subagents --\n');
+            writeSection(process.stdout, '-- Syncing OpenCode subagents --', 'info');
             return;
         case 'sync-remove-start':
             printRemovalStart(event.plan);
@@ -56,20 +57,20 @@ export function renderSyncResult(result: SyncCommandResult): number {
             printError(result);
             return result.exitCode;
         case 'cancelled':
-            process.stdout.write('Sync cancelled.\n');
+            process.stdout.write(`${colorize('Sync cancelled.', 'warning')}\n`);
             return result.exitCode;
         case 'add-failed':
             printInstallSummary(result.installs);
-            process.stdout.write('\nAborting before removals because installs failed.\n');
+            writeSection(process.stdout, 'Aborting before removals because installs failed.', 'error');
             return result.exitCode;
         case 'shared-failed':
             printSharedErrors(result.shared.errors);
-            process.stdout.write('\nAborting before removals because shared file sync failed.\n');
+            writeSection(process.stdout, 'Aborting before removals because shared file sync failed.', 'error');
             return result.exitCode;
         case 'subagent-failed':
             printSubagentSummary(result.subagents);
             printSharedErrors(result.subagents.errors);
-            process.stdout.write('\nAborting before removals because subagent sync failed.\n');
+            writeSection(process.stdout, 'Aborting before removals because subagent sync failed.', 'error');
             return result.exitCode;
         case 'completed':
             printSharedSummary(result);
@@ -86,53 +87,55 @@ export function renderSyncResult(result: SyncCommandResult): number {
 }
 
 function printHeader(header: ManagerHeader): void {
-    process.stdout.write('== Skills sync ==\n');
-    process.stdout.write(`CLI     : ${header.cliVersion}\n`);
-    process.stdout.write(`Manifest: ${header.manifestRelativePath}\n`);
-    process.stdout.write(`Lock    : ${header.lockRelativePath}\n`);
-    process.stdout.write(`Agents  : ${header.agents.join(', ')}\n`);
+    writeSection(process.stdout, '== Skills sync ==', 'heading', false);
+    process.stdout.write(`${colorize('CLI     :', 'muted')} ${header.cliVersion}\n`);
+    process.stdout.write(`${colorize('Manifest:', 'muted')} ${header.manifestRelativePath}\n`);
+    process.stdout.write(`${colorize('Lock    :', 'muted')} ${header.lockRelativePath}\n`);
+    process.stdout.write(`${colorize('Agents  :', 'muted')} ${header.agents.join(', ')}\n`);
 }
 
 function printCreatedTemplates(result: ManagerTemplatesCreatedResult): void {
-    process.stdout.write('\nBrak wymaganych plików. Utworzono szablony:\n');
-    result.createdTemplates.forEach(filePath => process.stdout.write(`  - ${filePath}\n`));
-    process.stdout.write('Uzupełnij skills.json i uruchom ponownie.\n');
+    writeSection(process.stdout, 'Brak wymaganych plików. Utworzono szablony:', 'warning');
+    result.createdTemplates.forEach((filePath) => {
+        writeBullet(process.stdout, filePath);
+    });
+    process.stdout.write(`${colorize('Uzupełnij skills.json i uruchom ponownie.', 'muted')}\n`);
 }
 
 function printSyncPlan(plan: SyncPlan): void {
-    process.stdout.write('\n-- Plan --\n');
-    process.stdout.write(`Managed(old): ${String(plan.oldManaged.length)}\n`);
-    process.stdout.write(`Managed(new): ${String(plan.newManaged.length)}\n`);
-    process.stdout.write(`Skills to remove (prune): ${String(plan.skillsRemoved.length)}\n`);
-    process.stdout.write(`Agents removed from whitelist: ${String(plan.agentsRemoved.length)}\n`);
+    writeSection(process.stdout, '-- Plan --', 'heading');
+    process.stdout.write(`${colorize('Managed(old):', 'muted')} ${String(plan.oldManaged.length)}\n`);
+    process.stdout.write(`${colorize('Managed(new):', 'muted')} ${String(plan.newManaged.length)}\n`);
+    process.stdout.write(`${colorize('Skills to remove (prune):', 'muted')} ${String(plan.skillsRemoved.length)}\n`);
+    process.stdout.write(`${colorize('Agents removed from whitelist:', 'muted')} ${String(plan.agentsRemoved.length)}\n`);
 }
 
 function printPreflight(preflight: SyncPreflight, force: boolean): void {
-    process.stdout.write('\n-- Local change guard --\n');
-    process.stdout.write('Standard sync cannot continue because local changes were detected in managed files.\n');
+    writeSection(process.stdout, '-- Local change guard --', 'warning');
+    process.stdout.write(`${colorize('Standard sync cannot continue because local changes were detected in managed files.', 'warning')}\n`);
     process.stdout.write('The affected files differ from the version recorded in skills.lock.json. If these changes were already published upstream, re-run with --update to resolve the current upstream and refresh the lock.\n');
-    process.stdout.write(`Detected potential overwrite/delete conflicts: ${String(preflight.conflicts.length)}\n`);
+    process.stdout.write(`${colorize('Detected potential overwrite/delete conflicts:', 'muted')} ${String(preflight.conflicts.length)}\n`);
     preflight.conflicts.forEach((conflict) => {
         const operation = conflict.operation === 'delete' ? 'delete' : 'overwrite';
-        process.stdout.write(`  - [${operation}] ${conflict.path} (${describeConflictReason(conflict.reason)})\n`);
+        writeBullet(process.stdout, `[${operation}] ${conflict.path} (${describeConflictReason(conflict.reason)})`, operation === 'delete' ? 'warning' : 'info');
     });
 
     if (force) {
-        process.stdout.write('Continuing because --force was provided.\n');
+        process.stdout.write(`${colorize('Continuing because --force was provided.', 'warning')}\n`);
     }
 }
 
 function printRemovalStart(plan: SyncPlan): void {
     if (plan.agentsRemoved.length > 0 && plan.oldManaged.length > 0) {
-        process.stdout.write(`\n-- Removing managed skills from removed agents: ${plan.agentsRemoved.join(', ')} --\n`);
+        writeSection(process.stdout, `-- Removing managed skills from removed agents: ${plan.agentsRemoved.join(', ')} --`, 'warning');
     }
 
     if (plan.skillsRemoved.length > 0 && plan.agentsUnion.length > 0) {
-        process.stdout.write(`\n-- Pruning removed/missing skills from agents: ${plan.agentsUnion.join(', ')} --\n`);
+        writeSection(process.stdout, `-- Pruning removed/missing skills from agents: ${plan.agentsUnion.join(', ')} --`, 'warning');
         return;
     }
 
-    process.stdout.write('\n-- Nothing to prune --\n');
+    writeSection(process.stdout, '-- Nothing to prune --', 'muted');
 }
 
 function printSharedSummary(result: Extract<SyncCommandResult, { status: 'completed' }>): void {
@@ -140,45 +143,45 @@ function printSharedSummary(result: Extract<SyncCommandResult, { status: 'comple
         .filter(([, stats]) => stats.declaredFiles > 0)
         .map(([source]) => source);
 
-    process.stdout.write('\n== Shared files summary ==\n');
+    writeSection(process.stdout, '== Shared files summary ==', 'heading');
     if (sourcesWithSharedFiles.length === 0) {
-        process.stdout.write('No shared files declared.\n');
+        process.stdout.write(`${colorize('No shared files declared.', 'muted')}\n`);
         return;
     }
 
     sourcesWithSharedFiles.forEach((source) => {
         const stats = result.shared.sharedStats[source] ?? { declaredFiles: 0, copiedFiles: 0 };
         const managedCount = (result.shared.managedNewLocalPaths[source] ?? []).length;
-        process.stdout.write(`- ${source}\n`);
-        process.stdout.write(`  declared files: ${String(stats.declaredFiles)}\n`);
-        process.stdout.write(`  copied files  : ${String(stats.copiedFiles)}\n`);
-        process.stdout.write(`  managed files: ${String(managedCount)}\n`);
+        writeBullet(process.stdout, source, 'accent');
+        process.stdout.write(`  ${colorize('declared files:', 'muted')} ${String(stats.declaredFiles)}\n`);
+        process.stdout.write(`  ${colorize('copied files  :', 'muted')} ${String(stats.copiedFiles)}\n`);
+        process.stdout.write(`  ${colorize('managed files:', 'muted')} ${String(managedCount)}\n`);
     });
-    process.stdout.write(`Pruned shared files: ${String(result.shared.removedFiles ?? 0)}\n`);
+    process.stdout.write(`${colorize('Pruned shared files:', 'muted')} ${String(result.shared.removedFiles ?? 0)}\n`);
 }
 
 function printSharedErrors(errors: SharedSyncError[]): void {
     errors.forEach((error) => {
         if (error.source) {
-            process.stderr.write(`\n${error.message} ${error.source}\n`);
+            process.stderr.write(`\n${colorize(error.message, 'error', process.stderr)} ${colorize(error.source, 'accent', process.stderr)}\n`);
         }
         else {
-            process.stderr.write(`\n${error.message}\n`);
+            process.stderr.write(`\n${colorize(error.message, 'error', process.stderr)}\n`);
         }
 
         if (Array.isArray(error.details)) {
             error.details.forEach((entry) => {
                 if (isObject(entry) && typeof entry.filePath === 'string' && typeof entry.a === 'string' && typeof entry.b === 'string') {
-                    process.stderr.write(`   - "${entry.filePath}" in: ${entry.a} AND ${entry.b}\n`);
+                    writeBullet(process.stderr, `"${entry.filePath}" in: ${entry.a} AND ${entry.b}`, 'muted', '   ');
                     return;
                 }
-                process.stderr.write(`   - ${formatUnknown(entry)}\n`);
+                writeBullet(process.stderr, formatUnknown(entry), 'muted', '   ');
             });
             return;
         }
 
         if (error.details) {
-            process.stderr.write(`   ${formatUnknown(error.details)}\n`);
+            process.stderr.write(`   ${colorize(formatUnknown(error.details), 'muted', process.stderr)}\n`);
         }
     });
 }
@@ -189,11 +192,11 @@ function printSubagentSummary(summary: {
     removed: number;
     sharedFiles: number;
 }): void {
-    process.stdout.write('\n== Subagents summary ==\n');
-    process.stdout.write(`Detected : ${String(summary.detected)}\n`);
-    process.stdout.write(`Installed: ${String(summary.installed)}\n`);
-    process.stdout.write(`Removed  : ${String(summary.removed)}\n`);
-    process.stdout.write(`Shared files: ${String(summary.sharedFiles)}\n`);
+    writeSection(process.stdout, '== Subagents summary ==', 'heading');
+    process.stdout.write(`${colorize('Detected :', 'muted')} ${String(summary.detected)}\n`);
+    process.stdout.write(`${colorize('Installed:', 'success')} ${String(summary.installed)}\n`);
+    process.stdout.write(`${colorize('Removed  :', 'warning')} ${String(summary.removed)}\n`);
+    process.stdout.write(`${colorize('Shared files:', 'muted')} ${String(summary.sharedFiles)}\n`);
 }
 
 function printMissingRequested(missingRequested: { source: string; skill: string }[]): void {
@@ -201,24 +204,24 @@ function printMissingRequested(missingRequested: { source: string; skill: string
         return;
     }
 
-    process.stdout.write('\n== Pruned missing (declared but not present upstream) ==\n');
+    writeSection(process.stdout, '== Pruned missing (declared but not present upstream) ==', 'warning');
     missingRequested.forEach((entry) => {
-        process.stdout.write(`  - ${entry.source}: "${entry.skill}"\n`);
+        writeBullet(process.stdout, `${entry.source}: "${entry.skill}"`, 'warning');
     });
 }
 
 function printInstallSummary(installs: SyncInstallResult[]): void {
-    process.stdout.write('\n== Install summary ==\n');
+    writeSection(process.stdout, '== Install summary ==', 'heading');
 
     const ok = installs.filter(item => item.ok);
     const failed = installs.filter(item => !item.ok);
 
-    process.stdout.write(`OK  : ${String(ok.length)}/${String(installs.length)}\n`);
-    process.stdout.write(`FAIL: ${String(failed.length)}/${String(installs.length)}\n`);
+    process.stdout.write(`${colorize('OK  :', 'success')} ${String(ok.length)}/${String(installs.length)}\n`);
+    process.stdout.write(`${colorize('FAIL:', failed.length > 0 ? 'error' : 'muted')} ${String(failed.length)}/${String(installs.length)}\n`);
     failed.forEach((item) => {
-        process.stdout.write(`  - ${item.source} exit=${String(item.status ?? 1)}\n`);
+        writeBullet(process.stdout, `${item.source} exit=${String(item.status ?? 1)}`, 'error');
         if (item.cmd?.length) {
-            process.stdout.write(`    cmd: ${item.cmd.join(' ')}\n`);
+            process.stdout.write(`    ${colorize(`cmd: ${item.cmd.join(' ')}`, 'muted')}\n`);
         }
     });
 }
@@ -226,14 +229,14 @@ function printInstallSummary(installs: SyncInstallResult[]): void {
 function printLockOutcome(lockWritten: boolean, lockRelativePath: string, lockMode?: 'locked' | 'updated'): void {
     if (!lockWritten) {
         if (lockMode === 'locked') {
-            process.stdout.write('\nLock unchanged (locked sync used the existing state).\n');
+            writeSection(process.stdout, 'Lock unchanged (locked sync used the existing state).', 'muted');
             return;
         }
-        process.stdout.write('\nLock NOT updated (because installs failed or missing skills were pruned).\n');
+        writeSection(process.stdout, 'Lock NOT updated (because installs failed or missing skills were pruned).', 'warning');
         return;
     }
 
-    process.stdout.write(`\nLock updated: ${lockRelativePath}\n`);
+    writeSection(process.stdout, `Lock updated: ${lockRelativePath}`, 'success');
 }
 
 function describeConflictReason(reason: string): string {

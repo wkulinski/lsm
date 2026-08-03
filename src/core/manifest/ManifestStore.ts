@@ -3,7 +3,7 @@ import path from 'node:path';
 
 import Helpers from '../shared/Helpers';
 import { hasSymlinkInPath } from '../filesystem/PathUtils';
-import ManifestNormalizer from './ManifestNormalizer';
+import ManifestNormalizer, { MANIFEST_SCHEMA_VERSION } from './ManifestNormalizer';
 import LockNormalizer, { LOCK_SCHEMA_VERSION } from './LockNormalizer';
 import {
     lockManagedSharedFilesBySource,
@@ -33,7 +33,7 @@ export default class ManifestStore {
 
         if (!fs.existsSync(this.manifestPath)) {
             this.ensureDirForFile(this.manifestPath);
-            this.writeJson(this.manifestPath, { agents: [], sources: [] });
+            this.writeJson(this.manifestPath, { schemaVersion: MANIFEST_SCHEMA_VERSION, agents: [], sources: [] });
             created.push(this.manifestPath);
         }
 

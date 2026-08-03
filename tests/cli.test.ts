@@ -12,8 +12,19 @@ describe('CLI composition', () => {
         vi.restoreAllMocks();
     });
 
-    test('keeps help handling in the top-level CLI', async () => {
-        await expect(runCli(['--help'])).resolves.toBe(0);
+    test.each(['--help', '-h'])('shows top-level help for %s', async (helpOption) => {
+        let output = '';
+        vi.spyOn(process.stdout, 'write').mockImplementation((chunk: string | Uint8Array): boolean => {
+            output += String(chunk);
+            return true;
+        });
+
+        await expect(runCli([helpOption])).resolves.toBe(0);
+        expect(output).toContain('Usage: lsm [options] [command]');
+        expect(output).toContain('sync');
+        expect(output).toContain('publish');
+        expect(output).toContain('Synchronize managed skills and OpenCode subagents');
+        expect(output).not.toContain('Usage: lsm sync [options]');
     });
 
     test('defaults to sync when no command is provided', async () => {
@@ -52,10 +63,11 @@ describe('CLI composition', () => {
         const tempDir = createTempDir();
         vi.spyOn(process, 'cwd').mockReturnValue(tempDir);
         writeJson(`${tempDir}/skills.json`, {
+            schemaVersion: 2,
             agents: ['codex'],
             sources: [
-                { source: 'owner/repo-a' },
-                { source: 'owner/repo-b' },
+                { source: 'owner/repo-a', skills: true },
+                { source: 'owner/repo-b', skills: true },
             ],
         });
         writeJson(`${tempDir}/skills.lock.json`, {

@@ -18,6 +18,7 @@ describe('ManifestStore', () => {
 
             expect(store.ensureFiles()).toEqual([manifestPath, lockPath]);
             expect(readJson(manifestPath)).toEqual({
+                schemaVersion: 2,
                 agents: [],
                 sources: [],
             });

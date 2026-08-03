@@ -3,6 +3,7 @@ import { afterEach, describe, expect, test, vi } from 'vitest';
 import { printError, printErrorDetails } from '../src/cli/renderers/errorRenderer';
 import { renderPublishEvent, renderPublishResult } from '../src/cli/renderers/publishRenderer';
 import { renderSyncEvent, renderSyncResult } from '../src/cli/renderers/syncRenderer';
+import { colorize, shouldUseColor, writeSection } from '../src/cli/renderers/terminalFormatter';
 import type {
     ManagerEvent,
     ManagerHeader,
@@ -85,6 +86,7 @@ const shared: SharedSyncResult = {
 function captureOutput(): { readonly stdout: string; readonly stderr: string } {
     let stdout = '';
     let stderr = '';
+    vi.stubEnv('NO_COLOR', '1');
     vi.spyOn(process.stdout, 'write').mockImplementation((chunk: string | Uint8Array): boolean => {
         stdout += String(chunk);
         return true;
@@ -106,6 +108,37 @@ function captureOutput(): { readonly stdout: string; readonly stderr: string } {
 
 afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+});
+
+describe('terminal formatter', () => {
+    test('uses color only for TTY output unless explicitly overridden', () => {
+        const tty = { isTTY: true, write: (): boolean => true };
+        const pipe = { isTTY: false, write: (): boolean => true };
+
+        expect(shouldUseColor(tty, {})).toBe(true);
+        expect(shouldUseColor(pipe, {})).toBe(false);
+        expect(shouldUseColor(pipe, { FORCE_COLOR: '1' })).toBe(true);
+        expect(shouldUseColor(tty, { FORCE_COLOR: '0' })).toBe(false);
+        expect(shouldUseColor(tty, { NO_COLOR: '' })).toBe(false);
+        expect(shouldUseColor(tty, { CI: 'true' })).toBe(false);
+        expect(shouldUseColor(tty, { GITHUB_ACTIONS: 'true' })).toBe(false);
+        expect(colorize('ok', 'success', tty, {})).toBe('\u001b[32mok\u001b[0m');
+        expect(colorize('ok', 'success', pipe, {})).toBe('ok');
+    });
+
+    test('puts one blank line between sections', () => {
+        let output = '';
+        const stream = { write: (chunk: string): boolean => {
+            output += chunk;
+            return true;
+        } };
+
+        writeSection(stream, 'First', 'heading', false);
+        writeSection(stream, 'Second', 'heading');
+
+        expect(output).toBe('First\n\nSecond\n');
+    });
 });
 
 describe('error renderer', () => {

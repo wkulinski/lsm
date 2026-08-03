@@ -21,6 +21,7 @@ describe('SkillsManager sync', () => {
 
             expect(result.createdTemplates.toSorted()).toEqual(['skills.json', 'skills.lock.json']);
             expect(readJson(path.join(tempDir, 'skills.json'))).toEqual({
+                schemaVersion: 2,
                 agents: [],
                 sources: [],
             });
@@ -41,8 +42,9 @@ describe('SkillsManager sync', () => {
 
         try {
             writeJson(path.join(tempDir, 'skills.json'), {
+                schemaVersion: 2,
                 agents: ['codex'],
-                sources: [{ source: 'owner/repo' }],
+                sources: [{ source: 'owner/repo', skills: true }],
             });
 
             const result = await createManager({ cwd: tempDir }).runSync();
@@ -66,6 +68,7 @@ describe('SkillsManager publish', () => {
 
         try {
             writeJson(path.join(tempDir, 'skills.json'), {
+                schemaVersion: 2,
                 agents: ['codex'],
                 sources: [
                     { source: 'owner/repo-a' },
@@ -99,8 +102,9 @@ describe('SkillsManager publish', () => {
 
         try {
             writeJson(path.join(tempDir, 'skills.json'), {
+                schemaVersion: 2,
                 agents: ['codex'],
-                sources: [{ source: 'owner/repo-a' }],
+                sources: [{ source: 'owner/repo-a', skills: true }],
             });
             writeJson(path.join(tempDir, 'skills.lock.json'), {
                 schemaVersion: 5,
@@ -141,8 +145,9 @@ describe('SkillsManager publish', () => {
 
         try {
             writeJson(path.join(tempDir, 'skills.json'), {
+                schemaVersion: 2,
                 agents: ['codex'],
-                sources: [{ source: 'owner/repo' }],
+                sources: [{ source: 'owner/repo', skills: true }],
             });
             writeJson(path.join(tempDir, 'skills.lock.json'), {
                 schemaVersion: 5,
