@@ -18,3 +18,4 @@ docs/HANDOFF.md
 !/.agents/skills/npm-release-manager/
 !/.agents/skills/npm-release-manager/**
 /docs/tmp/
+/.opencode/agents/
