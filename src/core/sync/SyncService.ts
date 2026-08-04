@@ -18,6 +18,7 @@ import type {
     SyncPreflightConflict,
     SyncRemovalSummary,
     SubagentSyncResult,
+    SyncSourceReport,
 } from '../types';
 
 export type SyncServiceReporter = (event: ManagerEvent) => void;
@@ -284,8 +285,18 @@ export default class SyncService {
             return this.emptySubagentResult();
         }
 
+        report?.({ type: 'sync-subagents-start' });
+        Object.entries(discovered).forEach(([source, meta]) => {
+            report?.({
+                type: 'sync-subagent-source',
+                source,
+                mode: meta.subagentMode ?? (meta.subagents?.length ? 'all' : 'none'),
+                selected: meta.subagents?.length ?? 0,
+            });
+        });
         const result = runtime.sync.syncSubagentsPhase?.({ lock: runtime.lock, discovered, force }) ?? {
             subagentFailed: true,
+            sources: Object.keys(discovered).length,
             detected: 0,
             installed: 0,
             removed: 0,
@@ -294,12 +305,25 @@ export default class SyncService {
         };
         report?.({
             type: 'sync-subagents',
+            sources: result.sources ?? Object.keys(discovered).length,
+            sourceReports: result.sourceReports ?? this.subagentSourceReports(discovered),
             detected: result.detected,
             installed: result.installed,
             removed: result.removed,
             sharedFiles: result.sharedFiles,
         });
         return result;
+    }
+
+    private subagentSourceReports(discovered: DiscoveredSources): SyncSourceReport[] {
+        return Object.entries(discovered).map(([source, meta]) => ({
+            source,
+            mode: meta.subagentMode ?? (meta.subagents?.length ? 'all' : 'none'),
+            selected: meta.subagents?.length ?? 0,
+            installed: 0,
+            removed: 0,
+            sharedFiles: 0,
+        }));
     }
 
     private emptySharedResult(): SharedSyncResult {
@@ -317,6 +341,7 @@ export default class SyncService {
     private emptySubagentResult(): SubagentSyncResult {
         return {
             subagentFailed: false,
+            sources: 0,
             detected: 0,
             installed: 0,
             removed: 0,

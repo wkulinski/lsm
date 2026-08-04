@@ -61,5 +61,6 @@ export type {
     SyncRemovalSummary,
     SyncSharedFailedResult,
     SubagentSyncResult,
+    SyncSourceReport,
     SyncSubagentFailedResult,
 } from './sync';

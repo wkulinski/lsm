@@ -60,8 +60,19 @@ export interface SharedSyncResult {
     errors: SharedSyncError[];
 }
 
+export interface SyncSourceReport {
+    source: string;
+    mode: 'none' | 'all' | 'explicit';
+    selected: number;
+    installed: number;
+    removed: number;
+    sharedFiles: number;
+}
+
 export interface SubagentSyncResult {
     subagentFailed: boolean;
+    sources?: number;
+    sourceReports?: SyncSourceReport[];
     detected: number;
     installed: number;
     removed: number;

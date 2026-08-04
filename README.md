@@ -142,6 +142,12 @@ node bin/lsm sync --force
 Zwykłe `sync` kończy się błędem, gdy lock jest pusty, niezgodny z manifestem
 albo nie zawiera wymaganego commita. `--force` nie omija tej walidacji.
 
+Output `sync` pokazuje osobny blok dla każdego źródła skilli i subagentów.
+Blok subagentów zawiera tryb (`all`, `explicit` albo `none`) i liczbę wybranych
+plików; dla `none` pokazuje także `Action: skipped`. Po zakończeniu synchronizacji
+podsumowanie subagentów zawiera liczbę źródeł, wybranych, zainstalowanych i
+usuniętych plików oraz plików współdzielonych.
+
 ### `publish`
 
 Publikuje lokalne zmiany do repozytorium źródłowego na podstawie danych zapisanych w locku.

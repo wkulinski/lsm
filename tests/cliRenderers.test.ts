@@ -262,7 +262,21 @@ describe('sync renderer', () => {
             { type: 'sync-add-start' },
             { type: 'sync-add-source', source: 'owner/repo', mode: 'all', skillCount: 2 },
             { type: 'sync-shared-start' },
-            { type: 'sync-subagents', detected: 3, installed: 2, removed: 1, sharedFiles: 4 },
+            { type: 'sync-subagents-start' },
+            { type: 'sync-subagent-source', source: 'owner/repo', mode: 'all', selected: 1 },
+            { type: 'sync-subagent-source', source: 'wkulinski/lsm', mode: 'none', selected: 0 },
+            {
+                type: 'sync-subagents',
+                sources: 2,
+                sourceReports: [
+                    { source: 'owner/repo', mode: 'all', selected: 1, installed: 1, removed: 0, sharedFiles: 0 },
+                    { source: 'wkulinski/lsm', mode: 'none', selected: 0, installed: 0, removed: 0, sharedFiles: 0 },
+                ],
+                detected: 3,
+                installed: 2,
+                removed: 1,
+                sharedFiles: 4,
+            },
             { type: 'sync-remove-start', plan },
             { type: 'publish-start', options: { source: null, newSkills: [], removeSkills: [], dryRun: false, confirmDeletes: false, createPr: null } },
         ];
@@ -275,6 +289,11 @@ describe('sync renderer', () => {
         expect(output.stdout).toContain('modified managed file');
         expect(output.stdout).toContain('Continuing because --force was provided.');
         expect(output.stdout).toContain('>>> Source: owner/repo');
+        expect(output.stdout).toContain('Mode      : all');
+        expect(output.stdout).toContain('Skills    : 2');
+        expect(output.stdout).toContain('Subagents : 1');
+        expect(output.stdout).toContain('Subagents : 0');
+        expect(output.stdout).toContain('Action    : skipped');
         expect(output.stdout).toContain('-- Syncing shared files');
         expect(output.stdout).toContain('-- Syncing OpenCode subagents --');
         expect(output.stdout).toContain('-- Pruning removed/missing skills');
@@ -311,6 +330,7 @@ describe('sync renderer', () => {
                 shared,
                 subagents: {
                     subagentFailed: true,
+                    sources: 1,
                     detected: 2,
                     installed: 1,
                     removed: 0,
@@ -327,7 +347,7 @@ describe('sync renderer', () => {
                 missingRequested: [{ source: 'owner/repo', skill: 'missing' }],
                 installs,
                 shared: { ...shared, sharedStats: {}, managedNewLocalPaths: {} },
-                subagents: { subagentFailed: false, detected: 2, installed: 2, removed: 1, sharedFiles: 1, errors: [] },
+                subagents: { subagentFailed: false, sources: 2, detected: 2, installed: 2, removed: 1, sharedFiles: 1, errors: [] },
                 removal: { removedFromRemovedAgents: 0, prunedSkills: 1, removedAgents: [], agentsUnion: ['codex'], hadNothingToPrune: false },
                 lockWritten: true,
             },
@@ -341,7 +361,8 @@ describe('sync renderer', () => {
         expect(output.stdout).toContain('Aborting before removals because installs failed.');
         expect(output.stdout).toContain('Aborting before removals because shared file sync failed.');
         expect(output.stdout).toContain('Aborting before removals because subagent sync failed.');
-        expect(output.stdout).toContain('Detected : 2');
+        expect(output.stdout).toContain('Selected  : 2');
+        expect(output.stdout).toContain('Sources    : 2');
         expect(output.stdout).toContain('== Shared files summary ==');
         expect(output.stdout).toContain('owner/repo: "missing"');
         expect(output.stdout).toContain('Lock updated: skills.lock.json');

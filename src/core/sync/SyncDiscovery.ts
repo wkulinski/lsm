@@ -37,7 +37,10 @@ export default class SyncDiscovery {
 
         manifest.sources.forEach(({ source, skills, subagents }) => {
             const resolvedCommit = update ? null : lock?.sources[source]?.resolved.resolvedCommit ?? null;
-            const activeSubagentSelection = (manifest.subagents ?? []).length > 0 ? subagents : [];
+            const activeSubagentSelection = (manifest.subagents ?? []).length > 0 ? (subagents ?? null) : [];
+            const subagentMode = activeSubagentSelection === null
+                ? 'all'
+                : activeSubagentSelection.length > 0 ? 'explicit' : 'none';
             const lockedSubagentEntries = lock?.sources[source]?.subagentEntries ?? [];
             const listed = this.listSourceOrDie({
                 source,
@@ -70,6 +73,7 @@ export default class SyncDiscovery {
                 missing.forEach(skill => missingRequested.push({ source, skill }));
                 discovered[source] = {
                     mode: 'explicit',
+                    subagentMode,
                     listedAt,
                     skills: desiredUniq,
                     skillEntries: filteredSkillEntries,
@@ -85,6 +89,7 @@ export default class SyncDiscovery {
 
             discovered[source] = {
                 mode: 'all',
+                subagentMode,
                 listedAt,
                 skills: available,
                 skillEntries,

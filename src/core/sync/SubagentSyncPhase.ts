@@ -1,4 +1,4 @@
-import type { DiscoveredSources, LockData, SubagentEntry, SubagentSyncResult } from '../types';
+import type { DiscoveredSources, LockData, SubagentEntry, SubagentSyncResult, SyncSourceReport } from '../types';
 import SubagentManagedFileAdapter from '../subagents/SubagentManagedFileAdapter';
 import ManagedFileSynchronizer, { type ManagedFileBaseline, type ManagedFilePlan } from './ManagedFileSynchronizer';
 
@@ -66,7 +66,7 @@ export default class SubagentSyncPhase {
             return planned;
         }
 
-        const result = this.resultForPlan(planned.plan, discovered);
+        const result = this.resultForPlan(planned.plan, discovered, lock);
         return { ok: true, plan: planned.plan, result };
     }
 
@@ -75,6 +75,8 @@ export default class SubagentSyncPhase {
         if (!planned.ok) {
             return {
                 subagentFailed: true,
+                sources: Object.keys(discovered).length,
+                sourceReports: this.sourceReports({ discovered, lock }),
                 detected: this.detected(discovered),
                 installed: 0,
                 removed: 0,
@@ -96,16 +98,44 @@ export default class SubagentSyncPhase {
         }
     }
 
-    private resultForPlan(plan: ManagedFilePlan, discovered: DiscoveredSources): SubagentSyncResult {
+    private resultForPlan(plan: ManagedFilePlan, discovered: DiscoveredSources, lock: LockData): SubagentSyncResult {
         const sharedFiles = plan.files.filter(file => file.targetPath.startsWith('.agents/skills/_shared/')).length;
         return {
             subagentFailed: false,
+            sources: Object.keys(discovered).length,
+            sourceReports: this.sourceReports({ discovered, lock, plan }),
             detected: this.detected(discovered),
             installed: plan.files.length - sharedFiles,
             removed: plan.removals.length,
             sharedFiles,
             errors: [],
         };
+    }
+
+    private sourceReports({ discovered, lock, plan }: {
+        discovered: DiscoveredSources;
+        lock: LockData;
+        plan?: ManagedFilePlan;
+    }): SyncSourceReport[] {
+        return Object.entries(discovered).map(([source, meta]) => {
+            const sourceFiles = plan?.files.filter(file => file.owner === source) ?? [];
+            const sourceLock = Object.hasOwn(lock.sources, source) ? lock.sources[source] : null;
+            const previousTargets = new Set([
+                ...(sourceLock?.subagentEntries ?? []).map(entry => entry.targetPath),
+                ...(sourceLock?.sharedEntries ?? [])
+                    .filter(entry => entry.owners.some(owner => owner.startsWith('subagent:')))
+                    .map(entry => entry.targetPath),
+            ]);
+            const sharedFiles = sourceFiles.filter(file => file.targetPath.startsWith('.agents/skills/_shared/')).length;
+            return {
+                source,
+                mode: meta.subagentMode ?? (meta.subagents?.length ? 'all' : 'none'),
+                selected: meta.subagents?.length ?? 0,
+                installed: sourceFiles.length - sharedFiles,
+                removed: plan?.removals.filter(target => previousTargets.has(target)).length ?? 0,
+                sharedFiles,
+            };
+        });
     }
 
     private detected(discovered: DiscoveredSources): number {

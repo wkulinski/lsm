@@ -53,7 +53,13 @@ describe('subagent sync integration', () => {
                 status: 'completed',
                 exitCode: 0,
                 lockWritten: true,
-                subagents: { detected: 1, installed: 1, sharedFiles: 2, removed: 0 },
+                subagents: {
+                    detected: 1,
+                    installed: 1,
+                    sharedFiles: 2,
+                    removed: 0,
+                    sourceReports: [{ source: sourceName, mode: 'explicit', selected: 1, installed: 1, removed: 0, sharedFiles: 2 }],
+                },
             });
             expect(fs.readFileSync(path.join(workspaceDir, '.opencode', 'agents', 'reviewer.md'), 'utf8')).toContain('# Reviewer');
             expect(fs.readFileSync(path.join(workspaceDir, subagentSourceFiles.sharedReference), 'utf8')).toContain('Runtime quality');
@@ -142,7 +148,12 @@ describe('subagent sync integration', () => {
                 status: 'completed',
                 exitCode: 0,
                 lockWritten: true,
-                subagents: { detected: 1, installed: 1, sharedFiles: 2 },
+                subagents: {
+                    detected: 1,
+                    installed: 1,
+                    sharedFiles: 2,
+                    sourceReports: [{ source: sourceName, mode: 'explicit', selected: 1, installed: 1, removed: 0, sharedFiles: 2 }],
+                },
             });
             expect(fs.existsSync(path.join(workspaceDir, '.agents', 'skills', 'example', 'SKILL.md'))).toBe(true);
             expect(fs.existsSync(path.join(workspaceDir, '.opencode', 'agents', 'reviewer.md'))).toBe(true);
@@ -240,7 +251,14 @@ describe('subagent sync integration', () => {
             expect(fs.readFileSync(localPath, 'utf8')).toBe('# Upstream change\n');
 
             writeManifest([]);
-            await expect(manager.runSync({ update: true })).resolves.toMatchObject({ status: 'completed', exitCode: 0, subagents: { removed: 3 } });
+            await expect(manager.runSync({ update: true })).resolves.toMatchObject({
+                status: 'completed',
+                exitCode: 0,
+                subagents: {
+                    removed: 3,
+                    sourceReports: [{ source: sourceName, mode: 'none', selected: 0, installed: 0, removed: 3, sharedFiles: 0 }],
+                },
+            });
             expect(fs.existsSync(localPath)).toBe(false);
             expect(fs.existsSync(path.join(workspaceDir, '.agents', 'skills', '_shared', 'references', 'runtime-quality-procedures.md'))).toBe(false);
         }

@@ -1,6 +1,6 @@
 import type { PublishCommandOptions } from './publish';
 import type { ManagerHeader } from './manager';
-import type { SyncPlan, SyncPreflight } from './sync';
+import type { SyncPlan, SyncPreflight, SyncSourceReport } from './sync';
 
 export type ManagerEvent
     = | { type: 'header'; header: ManagerHeader }
@@ -10,7 +10,9 @@ export type ManagerEvent
         | { type: 'sync-add-start' }
         | { type: 'sync-add-source'; source: string; mode: string; skillCount: number }
         | { type: 'sync-shared-start' }
-        | { type: 'sync-subagents'; detected: number; installed: number; removed: number; sharedFiles: number }
+        | { type: 'sync-subagents-start' }
+        | { type: 'sync-subagent-source'; source: string; mode: SyncSourceReport['mode']; selected: number }
+        | { type: 'sync-subagents'; sources?: number; sourceReports?: SyncSourceReport[]; detected: number; installed: number; removed: number; sharedFiles: number }
         | { type: 'sync-remove-start'; plan: SyncPlan }
         | { type: 'publish-start'; options: Required<Pick<PublishCommandOptions, 'dryRun' | 'confirmDeletes'>> & {
             source: string | null;

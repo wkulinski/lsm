@@ -30,15 +30,18 @@ export function renderSyncEvent(event: ManagerEvent): void {
             writeSection(process.stdout, '-- Installing desired skills to whitelisted agents --', 'info');
             return;
         case 'sync-add-source':
-            writeSection(process.stdout, `>>> Source: ${event.source}`, 'accent');
-            process.stdout.write(`    ${colorize('Mode  :', 'muted')} ${event.mode}\n`);
-            process.stdout.write(`    ${colorize('Skills:', 'muted')} ${String(event.skillCount)}\n`);
+            printSourceBlock(event.source, event.mode, 'Skills', event.skillCount);
             return;
         case 'sync-shared-start':
             writeSection(process.stdout, '-- Syncing shared files declared in skill frontmatter --', 'info');
             return;
-        case 'sync-subagents':
+        case 'sync-subagents-start':
             writeSection(process.stdout, '-- Syncing OpenCode subagents --', 'info');
+            return;
+        case 'sync-subagent-source':
+            printSourceBlock(event.source, event.mode, 'Subagents', event.selected);
+            return;
+        case 'sync-subagents':
             return;
         case 'sync-remove-start':
             printRemovalStart(event.plan);
@@ -92,6 +95,15 @@ function printHeader(header: ManagerHeader): void {
     process.stdout.write(`${colorize('Manifest:', 'muted')} ${header.manifestRelativePath}\n`);
     process.stdout.write(`${colorize('Lock    :', 'muted')} ${header.lockRelativePath}\n`);
     process.stdout.write(`${colorize('Agents  :', 'muted')} ${header.agents.join(', ')}\n`);
+}
+
+function printSourceBlock(source: string, mode: string, artifactLabel: string, count: number): void {
+    writeSection(process.stdout, `>>> Source: ${source}`, 'accent');
+    process.stdout.write(`    ${colorize('Mode'.padEnd(10) + ':', 'muted')} ${mode}\n`);
+    process.stdout.write(`    ${colorize(artifactLabel.padEnd(10) + ':', 'muted')} ${String(count)}\n`);
+    if (mode === 'none') {
+        process.stdout.write(`    ${colorize('Action'.padEnd(10) + ':', 'muted')} skipped\n`);
+    }
 }
 
 function printCreatedTemplates(result: ManagerTemplatesCreatedResult): void {
@@ -187,13 +199,15 @@ function printSharedErrors(errors: SharedSyncError[]): void {
 }
 
 function printSubagentSummary(summary: {
+    sources?: number;
     detected: number;
     installed: number;
     removed: number;
     sharedFiles: number;
 }): void {
     writeSection(process.stdout, '== Subagents summary ==', 'heading');
-    process.stdout.write(`${colorize('Detected :', 'muted')} ${String(summary.detected)}\n`);
+    process.stdout.write(`${colorize('Sources    :', 'muted')} ${String(summary.sources ?? 0)}\n`);
+    process.stdout.write(`${colorize('Selected  :', 'muted')} ${String(summary.detected)}\n`);
     process.stdout.write(`${colorize('Installed:', 'success')} ${String(summary.installed)}\n`);
     process.stdout.write(`${colorize('Removed  :', 'warning')} ${String(summary.removed)}\n`);
     process.stdout.write(`${colorize('Shared files:', 'muted')} ${String(summary.sharedFiles)}\n`);

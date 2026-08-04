@@ -67,6 +67,7 @@ export interface CollectSkillDirectoriesSuccess {
 
 export interface DiscoveredSourceMeta {
     mode: 'all' | 'explicit';
+    subagentMode?: 'none' | 'all' | 'explicit';
     listedAt: string;
     skills: string[];
     skillEntries: SkillEntry[];

@@ -13,6 +13,7 @@ import type {
     SyncPlan,
     SyncPreflight,
     SyncRemovalSummary,
+    SubagentSyncResult,
 } from '../src/core/types';
 import type { ManagerRuntime } from '../src/core/manager/types';
 
@@ -83,6 +84,48 @@ describe('SyncWorkflow', () => {
             lockWritten: false,
         });
         expect(lockWrites).toEqual([]);
+    });
+
+    test('reports subagent source details with the aggregate result', async () => {
+        const { runtime } = createRuntime({
+            manifest: createManifest({ subagents: ['opencode'] }),
+            subagentResult: {
+                subagentFailed: false,
+                sources: 1,
+                sourceReports: [{ source: 'upstream', mode: 'none', selected: 0, installed: 0, removed: 0, sharedFiles: 0 }],
+                detected: 0,
+                installed: 0,
+                removed: 0,
+                sharedFiles: 0,
+                errors: [],
+            },
+        });
+        const events: ManagerEvent[] = [];
+
+        await new SyncWorkflow().run({ runtime, options: { update: true }, report: event => events.push(event) });
+
+        expect(events.map(event => event.type)).toEqual([
+            'header',
+            'sync-discover-start',
+            'sync-plan',
+            'sync-add-start',
+            'sync-add-source',
+            'sync-shared-start',
+            'sync-subagents-start',
+            'sync-subagent-source',
+            'sync-subagents',
+            'sync-remove-start',
+        ]);
+        expect(events).toContainEqual({ type: 'sync-subagent-source', source: 'upstream', mode: 'none', selected: 0 });
+        expect(events).toContainEqual({
+            type: 'sync-subagents',
+            sources: 1,
+            sourceReports: [{ source: 'upstream', mode: 'none', selected: 0, installed: 0, removed: 0, sharedFiles: 0 }],
+            detected: 0,
+            installed: 0,
+            removed: 0,
+            sharedFiles: 0,
+        });
     });
 
     test('does not write lock when requested skills are missing', async () => {
@@ -226,6 +269,7 @@ function createRuntime(
         shared = createSharedResult(),
         removal = createRemovalSummary(),
         manifest = createManifest(),
+        subagentResult,
     }: {
         discovered?: DiscoveredSources;
         missingRequested?: { source: string; skill: string }[];
@@ -235,6 +279,7 @@ function createRuntime(
         shared?: SharedSyncResult;
         removal?: SyncRemovalSummary;
         manifest?: ManifestData;
+        subagentResult?: SubagentSyncResult;
     } = {},
 ): FakeRuntime {
     const calls: string[] = [];
@@ -283,6 +328,14 @@ function createRuntime(
             return removal;
         },
     };
+    if (subagentResult) {
+        Object.assign(sync, {
+            syncSubagentsPhase: (): SubagentSyncResult => {
+                calls.push('syncSubagentsPhase');
+                return subagentResult;
+            },
+        });
+    }
     const manifestStore = {
         writeLock(input: Parameters<ManagerRuntime['manifestStore']['writeLock']>[0]): void {
             lockWrites.push(input);
