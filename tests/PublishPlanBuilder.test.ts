@@ -141,6 +141,68 @@ describe('PublishPlanBuilder', () => {
         }
     });
 
+    test('plans deletion of missing baseline skill files without deleting untracked files', () => {
+        const tempDir = createTempDir();
+
+        try {
+            const skillPath = '.agents/skills/alpha';
+            writeFile(path.join(tempDir, skillPath, 'SKILL.md'), '# Alpha\n');
+            writeFile(path.join(tempDir, skillPath, 'new.md'), '# New\n');
+
+            const lockSource = createLockSource({
+                skillEntries: [createSkillEntry({
+                    name: 'Alpha',
+                    sourcePath: skillPath,
+                    hash: {
+                        treeSha256: 'tree-sha',
+                        files: [
+                            { path: 'SKILL.md', sha256: 'skill-sha' },
+                            { path: 'removed.md', sha256: 'removed-sha' },
+                        ],
+                    },
+                })],
+            });
+            const lock = createLock({ sources: { upstream: lockSource } });
+            const builder = createBuilder(tempDir, lock);
+
+            const plan = builder.build({
+                localSkills: createLocalSkills(tempDir, [createLocalSkill({
+                    name: 'Alpha',
+                    sourcePath: skillPath,
+                })]),
+                lock,
+                lockSource,
+                targetSource: 'upstream',
+                newSkills: [],
+                removeSkills: [],
+            });
+
+            expect(plan.errors).toEqual([]);
+            expect(plan.items).toEqual([
+                {
+                    type: 'directory',
+                    localPath: path.join(tempDir, skillPath),
+                    targetPath: skillPath,
+                },
+                {
+                    type: 'delete',
+                    deleteKind: 'file',
+                    targetPath: `${skillPath}/removed.md`,
+                    skillName: 'Alpha',
+                },
+            ]);
+            expect(plan.deleteItems).toEqual([{
+                type: 'delete',
+                deleteKind: 'file',
+                targetPath: `${skillPath}/removed.md`,
+                skillName: 'Alpha',
+            }]);
+        }
+        finally {
+            fs.rmSync(tempDir, { recursive: true, force: true });
+        }
+    });
+
     test('rejects a managed entry that points at the source skills root', () => {
         const tempDir = createTempDir();
 
@@ -361,17 +423,19 @@ function createSkillEntry(
         name,
         sourcePath,
         sharedFiles = [],
+        hash = null,
     }: {
         name: string;
         sourcePath: string;
         sharedFiles?: string[];
+        hash?: SkillEntry['hash'];
     },
 ): SkillEntry {
     return {
         name,
         sourcePath,
         sharedFiles,
-        hash: null,
+        hash,
     };
 }
 

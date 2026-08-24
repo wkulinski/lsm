@@ -152,6 +152,7 @@ export default class PublishPlanBuilder {
                 localPath: localSkill.path,
                 targetPath: entry.sourcePath,
             });
+            items.push(...this.collectDeletedSkillFiles(entry, localSkill));
         });
 
         if (newSkills.length > 0) {
@@ -277,6 +278,24 @@ export default class PublishPlanBuilder {
 
         const deleteItems = items.filter((item): item is DeletePublishItem => item.type === 'delete');
         return { items, deleteItems, warnings, errors };
+    }
+
+    private collectDeletedSkillFiles(entry: SkillEntry, localSkill: LocalSkill): DeletePublishItem[] {
+        if (!entry.hash) {
+            return [];
+        }
+
+        return entry.hash.files
+            .filter((file) => {
+                const localFilePath = path.resolve(localSkill.path, file.path);
+                return isPathInside(localFilePath, localSkill.path) && !fs.existsSync(localFilePath);
+            })
+            .map(file => ({
+                type: 'delete' as const,
+                deleteKind: 'file' as const,
+                targetPath: this.pathMapper.normalizePosix(path.posix.join(entry.sourcePath, file.path)),
+                skillName: entry.name,
+            }));
     }
 
     public formatDeleteItems(deleteItems: DeletePublishItem[]): string {

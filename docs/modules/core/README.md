@@ -32,6 +32,8 @@ CLI and public manager API:
   follow symlinks outside managed paths.
 - Local conflicts are reported before managed content is overwritten unless the
   user explicitly confirms or forces the operation.
+- Publish plans deletions of locally removed managed skill files only when they
+  are present in the lock baseline, and requires explicit delete confirmation.
 - Subagents are synchronized through the same source workspace, preflight,
   managed-file ownership, and rollback flow as skill shared files.
 

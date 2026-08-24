@@ -151,6 +151,9 @@ usuniętych plików oraz plików współdzielonych.
 ### `publish`
 
 Publikuje lokalne zmiany do repozytorium źródłowego na podstawie danych zapisanych w locku.
+Jeżeli plik usunięto z istniejącego zarządzanego skilla lokalnie, `publish` planuje
+jego usunięcie w źródle na podstawie listy plików z locka. Takie usunięcia wymagają
+`--confirm-deletes`; pliki spoza baseline locka nie są usuwane automatycznie.
 
 Opcje:
 - `--manifest <path>`: ścieżka do alternatywnego pliku manifestu
