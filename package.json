@@ -1,7 +1,7 @@
 {
     "name": "@wkulinski/lsm",
     "type": "module",
-    "version": "0.4.2",
+    "version": "0.4.3",
     "description": "Declarative manager for synchronizing and publishing LLM skills across AI agents.",
     "author": "Wojciech Kuliński",
     "license": "MIT",
