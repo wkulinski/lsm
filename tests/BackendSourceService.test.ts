@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+
 import { describe, expect, test } from 'vitest';
 
 import BackendSourceService, { type BackendSourceDiscovery, type BackendSourceListSkillsOptions } from '../src/core/source/BackendSourceService';
@@ -7,6 +9,7 @@ import type {
     ListSkillsSuccess,
     ResolvedSource,
 } from '../src/core/types';
+import { createLocalCloneDiscovery, createTempDir } from './helpers';
 
 describe('BackendSourceService', () => {
     test('delegates listSkills with normalized discovery options', () => {
@@ -96,6 +99,28 @@ describe('BackendSourceService', () => {
             ok: true,
             files: [{ path: '.agents/skills/shared/common.md' }],
         });
+    });
+
+    test('discovers plugins only when explicitly enabled by the OpenCode gate', () => {
+        const sourceRoot = createTempDir();
+
+        try {
+            const pluginPath = `${sourceRoot}/.opencode/plugins/plugin.js`;
+            fs.mkdirSync(`${sourceRoot}/.opencode/plugins`, { recursive: true });
+            fs.writeFileSync(pluginPath, 'module.exports = true;\n', 'utf8');
+
+            const discovery = createLocalCloneDiscovery(sourceRoot);
+            const service = new BackendSourceService({ createDiscovery: (): typeof discovery => discovery });
+
+            expect(service.discoverSource('owner/repo', { includePlugins: true })).toMatchObject({
+                ok: true,
+                plugins: [{ sourcePath: '.opencode/plugins/plugin.js', targetPath: '.opencode/plugins/plugin.js' }],
+            });
+            expect(service.discoverSource('owner/repo')).toMatchObject({ ok: true, plugins: [] });
+        }
+        finally {
+            fs.rmSync(sourceRoot, { recursive: true, force: true });
+        }
     });
 });
 

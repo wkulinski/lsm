@@ -67,6 +67,30 @@ describe('SyncLockValidator', () => {
             lock: createLock(),
         })).toContain('Lock schema v5 cannot be used with subagents');
     });
+
+    test('validates plugin entries in locked mode', () => {
+        const pluginEntry = {
+            sourcePath: '.opencode/plugins/plugin.js',
+            targetPath: '.opencode/plugins/plugin.js',
+            hash: { sha256: 'plugin-hash', executable: false },
+        };
+        const lock = createLock();
+        lock.schemaVersion = 6;
+        lock.subagents = ['opencode'];
+        lock.sources.upstream.pluginEntries = [pluginEntry];
+        const discovered = createDiscovered();
+        const discoveredPlugin = {
+            ...pluginEntry,
+            hash: { ...pluginEntry.hash },
+            content: Buffer.from('plugin\n'),
+        };
+        discovered.upstream.plugins = [discoveredPlugin];
+
+        expect(new SyncLockValidator().validateDiscovered({ lock, discovered })).toBeNull();
+
+        discoveredPlugin.hash.sha256 = 'changed-plugin-hash';
+        expect(new SyncLockValidator().validateDiscovered({ lock, discovered })).toContain('Locked plugin entries');
+    });
 });
 
 function createManifest({ agents = ['codex'], source = 'upstream', subagents = [] }: { agents?: string[]; source?: string; subagents?: string[] } = {}): ManifestData {

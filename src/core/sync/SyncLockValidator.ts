@@ -5,6 +5,7 @@ import type {
     DiscoveredSources,
     LockData,
     ManifestData,
+    PluginEntry,
     SkillEntry,
     SubagentEntry,
 } from '../types';
@@ -79,6 +80,16 @@ export default class SyncLockValidator {
                 return `Locked subagent selection for "${source}" does not match skills.json. ${UPDATE_HINT}`;
             }
 
+            if (this.pluginEntriesSignature(lockMeta.pluginEntries ?? []) !== this.pluginEntriesSignature(
+                (discoveredMeta.plugins ?? []).map(plugin => ({
+                    sourcePath: plugin.sourcePath,
+                    targetPath: plugin.targetPath,
+                    hash: plugin.hash,
+                })),
+            )) {
+                return `Locked plugin entries for "${source}" do not match the source commit. ${UPDATE_HINT}`;
+            }
+
             const discoveredSharedFileHashes = discoveredMeta.managedSharedFileHashes ?? discoveredMeta.sharedFileHashes.map(entry => ({
                 path: entry.path,
                 hash: { sha256: entry.sha256, executable: false },
@@ -140,6 +151,14 @@ export default class SyncLockValidator {
             sharedFiles: Helpers.sortUniq(entry.sharedFiles),
             hash: entry.hash,
         })).sort((a, b) => a.name.localeCompare(b.name)));
+    }
+
+    private pluginEntriesSignature(entries: PluginEntry[]): string {
+        return JSON.stringify(entries.map(entry => ({
+            sourcePath: entry.sourcePath,
+            targetPath: entry.targetPath,
+            hash: entry.hash,
+        })).sort((a, b) => a.targetPath.localeCompare(b.targetPath)));
     }
 
     private stringifySorted(values: string[]): string {

@@ -97,6 +97,7 @@ describe('SyncWorkflow', () => {
                 installed: 0,
                 removed: 0,
                 sharedFiles: 0,
+                plugins: { detected: 2, installed: 2, removed: 1 },
                 errors: [],
             },
         });
@@ -125,6 +126,7 @@ describe('SyncWorkflow', () => {
             installed: 0,
             removed: 0,
             sharedFiles: 0,
+            plugins: { detected: 2, installed: 2, removed: 1 },
         });
     });
 

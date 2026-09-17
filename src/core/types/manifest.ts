@@ -51,6 +51,12 @@ export interface SubagentEntry {
     hash: ManagedFileHash;
 }
 
+export interface PluginEntry {
+    sourcePath: string;
+    targetPath: string;
+    hash: ManagedFileHash;
+}
+
 export interface SharedEntry {
     sourcePath: string;
     targetPath: string;
@@ -73,6 +79,7 @@ export interface LockSourceMeta {
     skillEntries: SkillEntry[];
     sharedFileHashes?: FileHashEntry[];
     subagentEntries?: SubagentEntry[];
+    pluginEntries?: PluginEntry[];
     sharedEntries?: SharedEntry[];
     resolved: ResolvedSourceMeta;
 }

@@ -3,6 +3,7 @@ import type {
     FileHashEntry,
     LockSourceMeta,
     ManagedFileHashEntry,
+    PluginDefinition,
     SharedEntry,
     SkillEntry,
     SubagentDefinition,
@@ -36,6 +37,15 @@ export function lockSourcesFromDiscovered(
                     sharedFiles: subagent.sharedFiles,
                     hash: subagent.hash,
                 })),
+                ...(meta.plugins && meta.plugins.length > 0
+                    ? {
+                        pluginEntries: meta.plugins.map((plugin: PluginDefinition) => ({
+                            sourcePath: plugin.sourcePath,
+                            targetPath: plugin.targetPath,
+                            hash: plugin.hash,
+                        })),
+                    }
+                    : {}),
                 sharedEntries: sharedEntriesFromHashes(
                     sharedFileHashesBySource[source] ?? [],
                     managedFileHashesBySource[source] ?? [],

@@ -150,15 +150,59 @@ describe('SyncDiscovery', () => {
             sources: [{ source: 'upstream', skills: null, publish: { branchPrefix: null, createPr: null } }],
         }))).toThrow('Cannot list skills.');
     });
+
+    test('propagates plugins only when the OpenCode gate is enabled', () => {
+        const calls: { source: string; includePlugins: boolean }[] = [];
+        const plugin = {
+            sourcePath: '.opencode/plugins/plugin.js',
+            targetPath: '.opencode/plugins/plugin.js',
+            content: Buffer.from('plugin\n'),
+            hash: { sha256: 'plugin-hash', executable: false },
+        };
+        const discovery = new SyncDiscovery({
+            backend: createBackend({
+                results: {
+                    upstream: createListedSkillsResult({ skillEntries: [] }),
+                },
+                discoverSource: (source, options = {}) => {
+                    calls.push({ source, includePlugins: options.includePlugins ?? false });
+                    return {
+                        ...createListedSkillsResult({ skillEntries: [] }),
+                        listedAt: '2026-06-05T00:00:00.000Z',
+                        subagents: [],
+                        subagentSharedFiles: [],
+                        plugins: options.includePlugins ? [plugin] : [],
+                    };
+                },
+            }),
+        });
+
+        const enabled = discovery.discover(createManifest({
+            subagents: ['opencode'],
+            sources: [{ source: 'upstream', skills: null, publish: { branchPrefix: null, createPr: null } }],
+        }));
+        const disabled = discovery.discover(createManifest({
+            sources: [{ source: 'upstream', skills: null, publish: { branchPrefix: null, createPr: null } }],
+        }));
+
+        expect(calls).toEqual([
+            { source: 'upstream', includePlugins: true },
+            { source: 'upstream', includePlugins: false },
+        ]);
+        expect(enabled.discovered.upstream.plugins).toEqual([plugin]);
+        expect(disabled.discovered.upstream.plugins).toEqual([]);
+    });
 });
 
 function createBackend(
     {
         calls = [],
         results,
+        discoverSource,
     }: {
         calls?: ListSkillsCall[];
         results: { [source: string]: ReturnType<BackendLike['listSkills']> };
+        discoverSource?: NonNullable<BackendLike['discoverSource']>;
     },
 ): BackendLike {
     return {
@@ -182,6 +226,7 @@ function createBackend(
         removeSkillEntries(): ReturnType<BackendLike['removeSkillEntries']> {
             return { ok: true, status: 0, cmd: ['fake-remove'] };
         },
+        ...(discoverSource ? { discoverSource } : {}),
     };
 }
 
@@ -208,9 +253,10 @@ function createListedSkillsResult(
     };
 }
 
-function createManifest({ sources }: { sources: ManifestData['sources'] }): ManifestData {
+function createManifest({ sources, subagents = [] }: { sources: ManifestData['sources']; subagents?: string[] }): ManifestData {
     return {
         agents: ['codex'],
+        subagents,
         sources,
     };
 }

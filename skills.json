@@ -1,7 +1,7 @@
 {
-    "agents": [
-        "codex"
-    ],
+    "schemaVersion": 2,
+    "agents": ["codex"],
+    "subagents": ["opencode"],
     "sources": [
         {
             "source": "https://github.com/wkulinski/llm-skills",
@@ -20,8 +20,12 @@
                 "qa-run",
                 "review-quick",
                 "rules-sync",
-                "skills-index-refresh"
+                "skills-index-refresh",
+                "task-plan",
+                "plan-execute",
+                "code-review"
             ],
+            "subagents": true,
             "publish": {
                 "branchPrefix": "skills-sync/publish",
                 "createPr": true

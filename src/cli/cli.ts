@@ -15,7 +15,7 @@ export async function runCli(argv: string[]): Promise<number> {
 
     program
         .command('sync')
-        .description('Synchronize managed skills and OpenCode subagents from manifest sources')
+        .description('Synchronize managed skills, OpenCode subagents and plugins from manifest sources')
         .option('--manifest <path>', 'Path to skills manifest')
         .option('--update', 'Resolve current upstream sources and update the lock')
         .option('--force', 'Continue despite local change conflicts')

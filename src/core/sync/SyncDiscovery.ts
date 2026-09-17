@@ -22,6 +22,7 @@ interface ListedSkillsResult {
     resolved: ResolvedSourceMeta;
     subagents: SourceDiscoverySuccess['subagents'];
     subagentSharedFiles: SourceDiscoverySuccess['subagentSharedFiles'];
+    plugins: SourceDiscoverySuccess['plugins'];
 }
 
 export default class SyncDiscovery {
@@ -38,6 +39,7 @@ export default class SyncDiscovery {
         manifest.sources.forEach(({ source, skills, subagents }) => {
             const resolvedCommit = update ? null : lock?.sources[source]?.resolved.resolvedCommit ?? null;
             const activeSubagentSelection = (manifest.subagents ?? []).length > 0 ? (subagents ?? null) : [];
+            const includePlugins = (manifest.subagents ?? []).includes('opencode');
             const subagentMode = activeSubagentSelection === null
                 ? 'all'
                 : activeSubagentSelection.length > 0 ? 'explicit' : 'none';
@@ -46,6 +48,7 @@ export default class SyncDiscovery {
                 source,
                 skills,
                 subagents: activeSubagentSelection ?? null,
+                includePlugins,
                 mode: update ? 'update' : 'locked',
                 resolvedCommit,
                 lockedSubagentEntries,
@@ -61,6 +64,7 @@ export default class SyncDiscovery {
             const resolved = listed.resolved;
             const discoveredSubagents = listed.subagents;
             const subagentSharedFiles = listed.subagentSharedFiles;
+            const plugins = listed.plugins;
 
             if (skills !== null) {
                 const { desired, missing } = this.resolveDesiredSkills(skills, aliasMap);
@@ -81,6 +85,7 @@ export default class SyncDiscovery {
                     managedSharedFileHashes: skillManagedSharedFileHashes?.filter(entry => filteredSharedFiles.has(entry.path)),
                     subagents: discoveredSubagents,
                     subagentSharedFiles,
+                    plugins,
                     missingRequested: missing,
                     resolved,
                 };
@@ -97,6 +102,7 @@ export default class SyncDiscovery {
                 managedSharedFileHashes: skillManagedSharedFileHashes,
                 subagents: discoveredSubagents,
                 subagentSharedFiles,
+                plugins,
                 missingRequested: [],
                 resolved,
             };
@@ -124,6 +130,7 @@ export default class SyncDiscovery {
                 resolved: listed.resolved,
                 subagents: [],
                 subagentSharedFiles: [],
+                plugins: [],
             };
         }
 
@@ -134,6 +141,7 @@ export default class SyncDiscovery {
         source,
         skills,
         subagents,
+        includePlugins,
         mode,
         resolvedCommit,
         lockedSubagentEntries,
@@ -141,18 +149,20 @@ export default class SyncDiscovery {
         source: string;
         skills: string[] | null;
         subagents: string[] | null;
+        includePlugins: boolean;
         mode: 'update' | 'locked';
         resolvedCommit: string | null;
         lockedSubagentEntries: SubagentEntry[];
     }): ListedSkillsResult {
         if (typeof this.backend.discoverSource !== 'function') {
             const listed = this.listSkillsOrDie(source, skills, resolvedCommit);
-            return { ...listed, subagents: [], subagentSharedFiles: [] };
+            return { ...listed, subagents: [], subagentSharedFiles: [], plugins: [] };
         }
 
         const listed = this.backend.discoverSource(source, {
             skills,
             subagents,
+            includePlugins,
             mode,
             resolvedCommit,
             lockedSubagentEntries,

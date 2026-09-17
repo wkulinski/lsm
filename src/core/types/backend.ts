@@ -44,6 +44,7 @@ export interface BackendLike {
     discoverSource?(source: string, options?: {
         skills?: string[] | null;
         subagents?: string[] | null;
+        includePlugins?: boolean;
         mode?: 'update' | 'locked';
         resolvedCommit?: string | null;
         lockedSubagentEntries?: import('./manifest').SubagentEntry[];

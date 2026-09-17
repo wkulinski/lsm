@@ -6,6 +6,7 @@ Narzędzie potrafi:
 - synchronizować skille z zadeklarowanych źródeł,
 - instalować wybrane lub wszystkie skille dla wskazanych agentów,
 - synchronizować współdzielone pliki zadeklarowane w `shared_files`,
+- synchronizować rekurencyjny katalog pluginów OpenCode,
 - usuwać skille, które zniknęły z konfiguracji albo upstreamu,
 - publikować lokalne zmiany z powrotem do repozytorium źródłowego.
 
@@ -110,11 +111,32 @@ zapisuje v6 dopiero po udanym przebiegu.
 a manifest zawierający wyłącznie subagenty kończy się komunikatem:
 `Publish currently supports skills only; subagents are sync-only.`
 
+### Pluginy OpenCode
+
+Pluginy są synchronizowane razem z subagentami, gdy manifest zawiera top-level
+`"subagents": ["opencode"]`. Nie mają osobnej selekcji: dla każdego źródła
+lsm synchronizuje wszystkie zwykłe pliki z `.opencode/plugins/` rekurencyjnie,
+niezależnie od rozszerzenia, do identycznej ścieżki `.opencode/plugins/` w
+projekcie. Brak katalogu pluginów oznacza brak zmian. Symlinki i ścieżki
+wychodzące poza katalog źródłowy są odrzucane.
+
+Selekcja source-level `subagents` dotyczy wyłącznie agentów; nie ogranicza
+pluginów. `sync --update` zapisuje ich `sourcePath`, `targetPath`, hash,
+wykonywalność i commit w opcjonalnych `pluginEntries` locka v6. Zwykły `sync`
+korzysta z tego baseline'u i nie przyjmuje zmian upstreamu bez `--update`.
+Nieaktualne, wcześniej zarządzane pluginy są usuwane wyłącznie podczas udanego
+update; pliki unmanaged pozostają nietknięte.
+
+Pluginy są sync-only. `publish` ich nie publikuje, nie instaluje zależności npm
+i nie zmienia formatu pluginów OpenCode. Output `sync` pokazuje ich liczbę w
+osobnym bloku `Plugins summary` obok podsumowania subagentów.
+
 ## Komendy
 
 ### `sync`
 
-Synchronizuje lokalne skille i subagenty OpenCode z manifestem oraz źródłami upstream.
+Synchronizuje lokalne skille, subagenty OpenCode i pluginy OpenCode z manifestem
+oraz źródłami upstream.
 
 Opcje:
 - `--manifest <path>`: ścieżka do alternatywnego pliku manifestu
@@ -146,7 +168,8 @@ Output `sync` pokazuje osobny blok dla każdego źródła skilli i subagentów.
 Blok subagentów zawiera tryb (`all`, `explicit` albo `none`) i liczbę wybranych
 plików; dla `none` pokazuje także `Action: skipped`. Po zakończeniu synchronizacji
 podsumowanie subagentów zawiera liczbę źródeł, wybranych, zainstalowanych i
-usuniętych plików oraz plików współdzielonych.
+usuniętych plików oraz plików współdzielonych. Jeśli wykryto pluginy, osobny blok
+pokazuje liczbę wykrytych, zainstalowanych i usuniętych pluginów.
 
 ### `publish`
 

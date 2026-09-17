@@ -5,6 +5,7 @@ import type {
     LockData,
     LockSourceMeta,
     ManagedFileHash,
+    PluginEntry,
     ResolvedSourceMeta,
     SharedEntry,
     SkillEntry,
@@ -82,6 +83,7 @@ export default class LockNormalizer {
                     const sharedEntries = schemaVersion === LEGACY_LOCK_SCHEMA_VERSION
                         ? this.sharedEntriesFromLegacyHashes(sharedFileHashes, skillEntries)
                         : this.normalizeLockSharedEntries(normalizedMeta.sharedEntries);
+                    const hasPluginEntries = schemaVersion === LOCK_SCHEMA_VERSION && Object.hasOwn(normalizedMeta, 'pluginEntries');
 
                     return [source, {
                         mode: typeof normalizedMeta.mode === 'string' ? normalizedMeta.mode : 'all',
@@ -91,6 +93,7 @@ export default class LockNormalizer {
                         subagentEntries: schemaVersion === LOCK_SCHEMA_VERSION
                             ? this.normalizeLockSubagentEntries(normalizedMeta.subagentEntries)
                             : [],
+                        ...(hasPluginEntries ? { pluginEntries: this.normalizeLockPluginEntries(normalizedMeta.pluginEntries) } : {}),
                         sharedEntries,
                         resolved: this.normalizeLockResolved(normalizedMeta.resolved),
                     }];
@@ -107,12 +110,14 @@ export default class LockNormalizer {
                     const sharedEntries = normalized.sharedEntries && normalized.sharedEntries.length > 0
                         ? normalized.sharedEntries
                         : this.sharedEntriesFromLegacyHashes(meta.sharedFileHashes ?? [], normalized.skillEntries);
+                    const hasPluginEntries = Object.hasOwn(meta, 'pluginEntries');
 
                     return [source, {
                         mode: normalized.mode,
                         listedAt: normalized.listedAt,
                         skillEntries: normalized.skillEntries,
                         subagentEntries: normalized.subagentEntries ?? [],
+                        ...(hasPluginEntries ? { pluginEntries: normalized.pluginEntries ?? [] } : {}),
                         sharedEntries,
                         resolved: normalized.resolved,
                     }];
@@ -233,6 +238,34 @@ export default class LockNormalizer {
         });
 
         return [...unique.values()].sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    public normalizeLockPluginEntries(entries: unknown): PluginEntry[] {
+        if (!Array.isArray(entries)) {
+            return [];
+        }
+
+        const normalized = entries
+            .filter(entry => entry && typeof entry === 'object')
+            .map((entry: UnknownRecord) => ({
+                sourcePath: this.normalizeRelativePath(entry.sourcePath ?? '', 'lock.pluginEntries.sourcePath', this.lockFileName),
+                targetPath: this.normalizeRelativePath(entry.targetPath ?? '', 'lock.pluginEntries.targetPath', this.lockFileName),
+                hash: this.normalizeManagedFileHash(entry.hash, 'lock.pluginEntries.hash'),
+            }));
+
+        const unique = new Map<string, PluginEntry>();
+        normalized.forEach((entry) => {
+            const existing = unique.get(entry.targetPath);
+            if (existing) {
+                if (JSON.stringify(existing) !== JSON.stringify(entry)) {
+                    Helpers.die(`"${this.lockFileName}": duplicate plugin entry targetPath "${entry.targetPath}"`);
+                }
+                return;
+            }
+            unique.set(entry.targetPath, entry);
+        });
+
+        return [...unique.values()].sort((left, right) => left.targetPath.localeCompare(right.targetPath));
     }
 
     public normalizeLockSharedEntries(entries: unknown): SharedEntry[] {

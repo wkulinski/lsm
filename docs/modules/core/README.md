@@ -14,6 +14,8 @@ CLI and public manager API:
 - filesystem, hashing, and path-safety helpers.
 - OpenCode subagent discovery, synchronization, sidecar metadata, and managed
   shared files.
+- OpenCode plugin discovery and synchronization through the same managed-file
+  pipeline.
 
 ## Entrypoints
 
@@ -36,6 +38,8 @@ CLI and public manager API:
   are present in the lock baseline, and requires explicit delete confirmation.
 - Subagents are synchronized through the same source workspace, preflight,
   managed-file ownership, and rollback flow as skill shared files.
+- Plugins are synchronized through the same managed-file ownership, lock,
+  preflight, pruning, and rollback flow as OpenCode subagents.
 
 ## Subagent contract
 
@@ -52,7 +56,7 @@ manually; omitted selections that previously meant all must be written as
 `true`.
 
 Only Markdown files under `.opencode/agent/` and `.opencode/agents/` are
-discovered. The effective name comes from optional frontmatter or the path
+discovered as subagents. The effective name comes from optional frontmatter or the path
 relative to the variant directory. Duplicate names and target paths are
 rejected. A matching `<agent>.md.lsm.yaml` sidecar may declare `shared_files`;
 its schema is version 1 and every path must remain below
@@ -72,6 +76,28 @@ subagent-only manifest fails before source discovery with:
 ```text
 Publish currently supports skills only; subagents are sync-only.
 ```
+
+## Plugin contract
+
+Top-level `subagents: ["opencode"]` enables plugin synchronization together
+with OpenCode subagents. Plugin selection is not separate and source-level
+`subagents` does not filter it. Each regular file below the resolved source
+`.opencode/plugins/` directory is discovered recursively, including files with
+non-Markdown extensions, and is mapped to the same relative target path below
+the project `.opencode/plugins/` directory. A missing directory is empty;
+symlinks and paths escaping the source workspace fail safely.
+
+`sync --update` records plugin `sourcePath`, `targetPath`, content hash and
+executable bit in optional lock v6 `pluginEntries`. Locked sync uses the
+recorded commit and hashes. Upstream drift requires `--update`; stale managed
+plugin files are pruned only from the prior plugin ownership set, while
+unmanaged files are preserved. Plugin synchronization is sync-only: publish,
+plugin execution, and dependency installation are outside the core contract.
+
+The public sync result and OpenCode sync event may expose an optional `plugins`
+summary with detected, installed and removed counts. Existing agent, skill and
+publish fields remain unchanged, and the CLI omits this additional summary when
+no plugin files are present.
 
 ## TODO
 

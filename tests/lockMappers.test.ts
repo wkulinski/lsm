@@ -7,6 +7,7 @@ import {
 } from '../src/core/manifest/lockMappers';
 import type {
     DiscoveredSources,
+    PluginDefinition,
     ResolvedSourceMeta,
     SkillEntry,
 } from '../src/core/types';
@@ -26,6 +27,7 @@ describe('lockSourcesFromDiscovered', () => {
             name: 'Beta',
             sourcePath: '.agents/skills/beta',
         });
+        const plugin = createPlugin();
         const resolved = createResolvedMeta();
 
         expect(lockSourcesFromDiscovered({
@@ -33,6 +35,7 @@ describe('lockSourcesFromDiscovered', () => {
                 mode: 'explicit',
                 listedAt: '2026-06-05T00:00:00.000Z',
                 skillEntries: [alpha],
+                plugins: [plugin],
                 resolved,
             }),
             fork: createDiscoveredSource({
@@ -58,6 +61,11 @@ describe('lockSourcesFromDiscovered', () => {
                 }],
                 sharedFileHashes: [{ path: '.agents/skills/shared/alpha.md', sha256: 'shared-hash' }],
                 subagentEntries: [],
+                pluginEntries: [{
+                    sourcePath: '.opencode/plugins/plugin.js',
+                    targetPath: '.opencode/plugins/plugin.js',
+                    hash: { sha256: 'plugin-hash', executable: true },
+                }],
                 sharedEntries: [{
                     sourcePath: '.agents/skills/shared/alpha.md',
                     targetPath: '.agents/skills/shared/alpha.md',
@@ -149,11 +157,13 @@ function createDiscoveredSource(
         mode,
         listedAt,
         skillEntries,
+        plugins = [],
         resolved,
     }: {
         mode: DiscoveredSources[string]['mode'];
         listedAt: string;
         skillEntries: SkillEntry[];
+        plugins?: PluginDefinition[];
         resolved: ResolvedSourceMeta;
     },
 ): DiscoveredSources[string] {
@@ -163,8 +173,18 @@ function createDiscoveredSource(
         skills: skillEntries.map(entry => entry.name),
         skillEntries,
         sharedFileHashes: [],
+        ...(plugins.length > 0 ? { plugins } : {}),
         missingRequested: [],
         resolved,
+    };
+}
+
+function createPlugin(): PluginDefinition {
+    return {
+        sourcePath: '.opencode/plugins/plugin.js',
+        targetPath: '.opencode/plugins/plugin.js',
+        content: Buffer.from('plugin\n'),
+        hash: { sha256: 'plugin-hash', executable: true },
     };
 }
 

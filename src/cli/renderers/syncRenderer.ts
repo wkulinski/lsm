@@ -6,6 +6,7 @@ import type {
     SharedSyncError,
     SyncCommandResult,
     SyncInstallResult,
+    SyncPluginSummary,
     SyncPlan,
     SyncPreflight,
 } from '../../core/types';
@@ -204,6 +205,7 @@ function printSubagentSummary(summary: {
     installed: number;
     removed: number;
     sharedFiles: number;
+    plugins?: SyncPluginSummary;
 }): void {
     writeSection(process.stdout, '== Subagents summary ==', 'heading');
     process.stdout.write(`${colorize('Sources    :', 'muted')} ${String(summary.sources ?? 0)}\n`);
@@ -211,6 +213,16 @@ function printSubagentSummary(summary: {
     process.stdout.write(`${colorize('Installed:', 'success')} ${String(summary.installed)}\n`);
     process.stdout.write(`${colorize('Removed  :', 'warning')} ${String(summary.removed)}\n`);
     process.stdout.write(`${colorize('Shared files:', 'muted')} ${String(summary.sharedFiles)}\n`);
+    if (summary.plugins) {
+        printPluginSummary(summary.plugins);
+    }
+}
+
+function printPluginSummary(summary: SyncPluginSummary): void {
+    writeSection(process.stdout, '== Plugins summary ==', 'heading');
+    process.stdout.write(`${colorize('Detected :', 'muted')} ${String(summary.detected)}\n`);
+    process.stdout.write(`${colorize('Installed:', 'success')} ${String(summary.installed)}\n`);
+    process.stdout.write(`${colorize('Removed  :', 'warning')} ${String(summary.removed)}\n`);
 }
 
 function printMissingRequested(missingRequested: { source: string; skill: string }[]): void {

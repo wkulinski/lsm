@@ -276,6 +276,7 @@ describe('sync renderer', () => {
                 installed: 2,
                 removed: 1,
                 sharedFiles: 4,
+                plugins: { detected: 1, installed: 1, removed: 0 },
             },
             { type: 'sync-remove-start', plan },
             { type: 'publish-start', options: { source: null, newSkills: [], removeSkills: [], dryRun: false, confirmDeletes: false, createPr: null } },
@@ -347,7 +348,16 @@ describe('sync renderer', () => {
                 missingRequested: [{ source: 'owner/repo', skill: 'missing' }],
                 installs,
                 shared: { ...shared, sharedStats: {}, managedNewLocalPaths: {} },
-                subagents: { subagentFailed: false, sources: 2, detected: 2, installed: 2, removed: 1, sharedFiles: 1, errors: [] },
+                subagents: {
+                    subagentFailed: false,
+                    sources: 2,
+                    detected: 2,
+                    installed: 2,
+                    removed: 1,
+                    sharedFiles: 1,
+                    plugins: { detected: 1, installed: 1, removed: 0 },
+                    errors: [],
+                },
                 removal: { removedFromRemovedAgents: 0, prunedSkills: 1, removedAgents: [], agentsUnion: ['codex'], hadNothingToPrune: false },
                 lockWritten: true,
             },
@@ -363,6 +373,9 @@ describe('sync renderer', () => {
         expect(output.stdout).toContain('Aborting before removals because subagent sync failed.');
         expect(output.stdout).toContain('Selected  : 2');
         expect(output.stdout).toContain('Sources    : 2');
+        expect(output.stdout).toContain('== Plugins summary ==');
+        expect(output.stdout).toContain('Detected : 1');
+        expect(output.stdout).toContain('Installed: 1');
         expect(output.stdout).toContain('== Shared files summary ==');
         expect(output.stdout).toContain('owner/repo: "missing"');
         expect(output.stdout).toContain('Lock updated: skills.lock.json');
@@ -389,5 +402,25 @@ describe('sync renderer', () => {
         expect(output.stdout).not.toContain('== Subagents summary ==');
         expect(output.stdout).toContain('OK  : 0/0');
         expect(output.stdout).toContain('Lock NOT updated');
+    });
+
+    test('keeps the existing OpenCode summary when no plugins are present', () => {
+        const output = captureOutput();
+        renderSyncResult({
+            status: 'completed',
+            exitCode: 0,
+            header,
+            plan,
+            preflight: { ok: true, conflicts: [] },
+            missingRequested: [],
+            installs: [],
+            shared: { ...shared, sharedStats: {}, removedFiles: 0 },
+            subagents: { subagentFailed: false, sources: 1, detected: 1, installed: 1, removed: 0, sharedFiles: 0, errors: [] },
+            removal: { removedFromRemovedAgents: 0, prunedSkills: 0, removedAgents: [], agentsUnion: ['codex'], hadNothingToPrune: true },
+            lockWritten: false,
+        });
+
+        expect(output.stdout).toContain('== Subagents summary ==');
+        expect(output.stdout).not.toContain('== Plugins summary ==');
     });
 });

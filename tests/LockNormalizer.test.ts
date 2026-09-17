@@ -184,4 +184,49 @@ describe('LockNormalizer', () => {
             },
         });
     });
+
+    test('normalizes optional plugin entries without changing the lock schema', () => {
+        const normalizer = new LockNormalizer({ lockFileName: 'skills.lock.json' });
+
+        expect(normalizer.normalize({
+            schemaVersion: 6,
+            agents: [],
+            subagents: ['opencode'],
+            sources: {
+                upstream: {
+                    skillEntries: [],
+                    pluginEntries: [
+                        {
+                            sourcePath: '.opencode/plugins/zeta.js',
+                            targetPath: '.opencode/plugins/zeta.js',
+                            hash: { sha256: ' zeta ', executable: true },
+                        },
+                        {
+                            sourcePath: '.opencode/plugins/alpha.js',
+                            targetPath: '.opencode/plugins/alpha.js',
+                            hash: { sha256: ' alpha ', executable: false },
+                        },
+                    ],
+                },
+            },
+        })).toMatchObject({
+            schemaVersion: 6,
+            sources: {
+                upstream: {
+                    pluginEntries: [
+                        {
+                            sourcePath: '.opencode/plugins/alpha.js',
+                            targetPath: '.opencode/plugins/alpha.js',
+                            hash: { sha256: 'alpha', executable: false },
+                        },
+                        {
+                            sourcePath: '.opencode/plugins/zeta.js',
+                            targetPath: '.opencode/plugins/zeta.js',
+                            hash: { sha256: 'zeta', executable: true },
+                        },
+                    ],
+                },
+            },
+        });
+    });
 });

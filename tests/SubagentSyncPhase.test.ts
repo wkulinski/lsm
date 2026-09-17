@@ -5,10 +5,11 @@ import { describe, expect, test, vi } from 'vitest';
 
 import Hashing from '../src/core/shared/Hashing';
 import SubagentSyncPhase from '../src/core/sync/SubagentSyncPhase';
-import type { DiscoveredSources, LockData, SubagentDefinition } from '../src/core/types';
+import type { DiscoveredSources, LockData, PluginDefinition, SubagentDefinition } from '../src/core/types';
 import { createTempDir } from './helpers';
 
 const AGENT_PATH = '.opencode/agents/reviewer.md';
+const PLUGIN_PATH = '.opencode/plugins/plugin.js';
 const SHARED_PATH = '.agents/skills/_shared/references/runtime.md';
 
 describe('SubagentSyncPhase', () => {
@@ -124,6 +125,138 @@ describe('SubagentSyncPhase', () => {
             fs.rmSync(root, { recursive: true, force: true });
         }
     });
+
+    test('applies plugin files and prunes stale plugin files from their prior lock entries', () => {
+        const root = createTempDir();
+        const pluginPath = path.join(root, PLUGIN_PATH);
+        fs.mkdirSync(path.dirname(pluginPath), { recursive: true });
+        fs.writeFileSync(pluginPath, '# Old plugin\n');
+
+        try {
+            const phase = new SubagentSyncPhase({ root });
+            const updated = phase.synchronize({
+                lock: createLock({
+                    pluginEntries: [{
+                        sourcePath: PLUGIN_PATH,
+                        targetPath: PLUGIN_PATH,
+                        hash: managedHash('# Old plugin\n', false),
+                    }],
+                }),
+                discovered: createDiscovered({ plugins: [createPlugin('# New plugin\n')] }),
+            });
+
+            expect(updated).toMatchObject({ subagentFailed: false, installed: 1, removed: 0 });
+            expect(fs.readFileSync(pluginPath, 'utf8')).toBe('# New plugin\n');
+
+            const pruned = phase.synchronize({
+                lock: createLock({
+                    pluginEntries: [{
+                        sourcePath: PLUGIN_PATH,
+                        targetPath: PLUGIN_PATH,
+                        hash: managedHash('# New plugin\n', false),
+                    }],
+                }),
+                discovered: createDiscovered(),
+            });
+
+            expect(pruned).toMatchObject({ subagentFailed: false, installed: 0, removed: 1 });
+            expect(fs.existsSync(pluginPath)).toBe(false);
+        }
+        finally {
+            fs.rmSync(root, { recursive: true, force: true });
+        }
+    });
+
+    test('rejects plugin ownership conflicts before writing any target', () => {
+        const root = createTempDir();
+
+        try {
+            const result = new SubagentSyncPhase({ root }).plan({
+                lock: createLock(),
+                discovered: {
+                    ...createDiscovered({ source: 'source-a', plugins: [createPlugin('# First plugin\n')] }),
+                    ...createDiscovered({ source: 'source-b', plugins: [createPlugin('# Second plugin\n')] }),
+                },
+            });
+
+            expect(result).toMatchObject({
+                ok: false,
+                error: 'Managed file ownership conflicts detected.',
+            });
+            expect(fs.existsSync(path.join(root, PLUGIN_PATH))).toBe(false);
+        }
+        finally {
+            fs.rmSync(root, { recursive: true, force: true });
+        }
+    });
+
+    test('rejects an unmanaged plugin overwrite before applying other managed files', () => {
+        const root = createTempDir();
+        const pluginPath = path.join(root, PLUGIN_PATH);
+        fs.mkdirSync(path.dirname(pluginPath), { recursive: true });
+        fs.writeFileSync(pluginPath, '# Local plugin\n');
+
+        try {
+            const result = new SubagentSyncPhase({ root }).synchronize({
+                lock: createLock(),
+                discovered: createDiscovered({
+                    subagents: [createSubagent('# New agent\n')],
+                    plugins: [createPlugin('# New plugin\n')],
+                }),
+            });
+
+            expect(result).toMatchObject({
+                subagentFailed: true,
+                errors: [{ message: 'Managed file local conflicts detected.', details: [PLUGIN_PATH] }],
+            });
+            expect(fs.readFileSync(pluginPath, 'utf8')).toBe('# Local plugin\n');
+            expect(fs.existsSync(path.join(root, AGENT_PATH))).toBe(false);
+            expect(fs.readdirSync(root).some(entry => entry.startsWith('.lsm-managed-journal-'))).toBe(false);
+        }
+        finally {
+            fs.rmSync(root, { recursive: true, force: true });
+        }
+    });
+
+    test('rolls back a plugin write when the managed-file apply fails', () => {
+        const root = createTempDir();
+        const pluginPath = path.join(root, PLUGIN_PATH);
+        fs.mkdirSync(path.dirname(pluginPath), { recursive: true });
+        fs.writeFileSync(pluginPath, '# Old plugin\n');
+        const originalRename = fs.renameSync;
+        let failed = false;
+        const renameSpy = vi.spyOn(fs, 'renameSync').mockImplementation((from, to) => {
+            if (!failed && String(to).endsWith(PLUGIN_PATH)) {
+                failed = true;
+                throw new Error('simulated plugin rename failure');
+            }
+            originalRename(from, to);
+        });
+
+        try {
+            const result = new SubagentSyncPhase({ root }).synchronize({
+                lock: createLock({
+                    pluginEntries: [{
+                        sourcePath: PLUGIN_PATH,
+                        targetPath: PLUGIN_PATH,
+                        hash: managedHash('# Old plugin\n', false),
+                    }],
+                }),
+                discovered: createDiscovered({ plugins: [createPlugin('# New plugin\n')] }),
+            });
+
+            expect(result).toMatchObject({
+                subagentFailed: true,
+                errors: [{ message: 'Failed while applying managed subagents.' }],
+            });
+            expect(fs.readFileSync(pluginPath, 'utf8')).toBe('# Old plugin\n');
+            expect(fs.readdirSync(root).some(entry => entry.startsWith('.lsm-managed-journal-'))).toBe(false);
+        }
+        finally {
+            renameSpy.mockRestore();
+            fs.rmSync(root, { recursive: true, force: true });
+        }
+    });
 });
 
 function createSubagent(content: string, executable = false): SubagentDefinition {
@@ -142,10 +275,12 @@ function createSubagent(content: string, executable = false): SubagentDefinition
 function createDiscovered({
     source = 'source-a',
     subagents = [],
+    plugins = [],
     sharedFiles = [],
 }: {
     source?: string;
     subagents?: SubagentDefinition[];
+    plugins?: PluginDefinition[];
     sharedFiles?: { path: string; content: Buffer; executable: boolean }[];
 } = {}): DiscoveredSources {
     return {
@@ -156,6 +291,7 @@ function createDiscovered({
             skillEntries: [],
             sharedFileHashes: [],
             subagents,
+            plugins,
             subagentSharedFiles: sharedFiles,
             missingRequested: [],
             resolved: {
@@ -172,9 +308,11 @@ function createDiscovered({
 
 function createLock({
     subagentEntries = [],
+    pluginEntries = [],
     sharedEntries = [],
 }: {
     subagentEntries?: LockData['sources'][string]['subagentEntries'];
+    pluginEntries?: LockData['sources'][string]['pluginEntries'];
     sharedEntries?: LockData['sources'][string]['sharedEntries'];
 } = {}): LockData {
     return {
@@ -187,6 +325,7 @@ function createLock({
                 listedAt: '2026-07-27T00:00:00.000Z',
                 skillEntries: [],
                 subagentEntries,
+                pluginEntries,
                 sharedEntries,
                 resolved: {
                     requestedRef: null,
@@ -203,4 +342,14 @@ function createLock({
 
 function managedHash(content: string, executable: boolean): { sha256: string; executable: boolean } {
     return { sha256: Hashing.sha256Buffer(Buffer.from(content)), executable };
+}
+
+function createPlugin(content: string, executable = false): PluginDefinition {
+    const buffer = Buffer.from(content);
+    return {
+        sourcePath: PLUGIN_PATH,
+        targetPath: PLUGIN_PATH,
+        content: buffer,
+        hash: managedHash(content, executable),
+    };
 }

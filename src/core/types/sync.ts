@@ -69,6 +69,12 @@ export interface SyncSourceReport {
     sharedFiles: number;
 }
 
+export interface SyncPluginSummary {
+    detected: number;
+    installed: number;
+    removed: number;
+}
+
 export interface SubagentSyncResult {
     subagentFailed: boolean;
     sources?: number;
@@ -77,6 +83,7 @@ export interface SubagentSyncResult {
     installed: number;
     removed: number;
     sharedFiles: number;
+    plugins?: SyncPluginSummary;
     errors: SharedSyncError[];
 }
 

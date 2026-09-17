@@ -311,6 +311,7 @@ export default class SyncService {
             installed: result.installed,
             removed: result.removed,
             sharedFiles: result.sharedFiles,
+            ...(result.plugins ? { plugins: result.plugins } : {}),
         });
         return result;
     }

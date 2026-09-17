@@ -128,6 +128,11 @@ describe('subagent sync integration', () => {
 
         try {
             createSubagentSourceRepository(sourceDir);
+            const pluginSourcePath = path.join(sourceDir, '.opencode/plugins/mixed.js');
+            writePlugin(pluginSourcePath, 'module.exports = true;\n');
+            const runner = new GitRunner();
+            expect(runner.run(sourceDir, ['add', '.']).ok).toBe(true);
+            expect(runner.run(sourceDir, ['commit', '-m', 'add mixed plugin']).ok).toBe(true);
             fs.mkdirSync(workspaceDir, { recursive: true });
             fs.writeFileSync(path.join(workspaceDir, 'skills.json'), JSON.stringify({
                 schemaVersion: 2,
@@ -150,18 +155,255 @@ describe('subagent sync integration', () => {
                 lockWritten: true,
                 subagents: {
                     detected: 1,
-                    installed: 1,
+                    installed: 2,
                     sharedFiles: 2,
-                    sourceReports: [{ source: sourceName, mode: 'explicit', selected: 1, installed: 1, removed: 0, sharedFiles: 2 }],
+                    plugins: { detected: 1, installed: 1, removed: 0 },
+                    sourceReports: [{ source: sourceName, mode: 'explicit', selected: 1, installed: 2, removed: 0, sharedFiles: 2 }],
                 },
             });
             expect(fs.existsSync(path.join(workspaceDir, '.agents', 'skills', 'example', 'SKILL.md'))).toBe(true);
             expect(fs.existsSync(path.join(workspaceDir, '.opencode', 'agents', 'reviewer.md'))).toBe(true);
+            expect(fs.existsSync(path.join(workspaceDir, '.opencode/plugins/mixed.js'))).toBe(true);
             const lock = JSON.parse(fs.readFileSync(path.join(workspaceDir, 'skills.lock.json'), 'utf8')) as {
-                sources: { [key: string]: { sharedEntries: { owners: string[] }[] } };
+                sources: { [key: string]: { pluginEntries: { sourcePath: string; targetPath: string; hash: { sha256: string; executable: boolean } }[]; sharedEntries: { owners: string[] }[] } };
             };
             const owners = lock.sources[sourceName].sharedEntries.flatMap(entry => entry.owners);
             expect(owners).toEqual(expect.arrayContaining(['skill:Example', 'subagent:reviewer']));
+            expect(lock.sources[sourceName].pluginEntries).toHaveLength(1);
+            expect(lock.sources[sourceName].pluginEntries[0]).toMatchObject({
+                targetPath: '.opencode/plugins/mixed.js',
+                sourcePath: '.opencode/plugins/mixed.js',
+                hash: { executable: false },
+            });
+            expect(lock.sources[sourceName].pluginEntries[0]?.hash.sha256).toEqual(expect.any(String));
+        }
+        finally {
+            fs.rmSync(root, { recursive: true, force: true });
+        }
+    });
+
+    test('syncs plugins through update and locked mode, then prunes only managed plugin files', async () => {
+        const root = createTempDir();
+        const sourceDir = path.join(root, 'source');
+        const workspaceDir = path.join(root, 'workspace');
+        const sourceName = 'local/plugins';
+        const pluginSourcePath = path.join(sourceDir, '.opencode/plugins/plugin.js');
+        const pluginTargetPath = path.join(workspaceDir, '.opencode/plugins/plugin.js');
+        const resolvedSource: ResolvedSource = {
+            ok: true,
+            handler: 'github',
+            provider: 'github',
+            url: sourceDir,
+            ref: null,
+            subpath: null,
+            webUrl: sourceDir,
+        };
+
+        try {
+            createSubagentSourceRepository(sourceDir);
+            writePlugin(pluginSourcePath, 'module.exports = 1;\n');
+            const runner = new GitRunner();
+            expect(runner.run(sourceDir, ['add', '.']).ok).toBe(true);
+            expect(runner.run(sourceDir, ['commit', '-m', 'add plugin']).ok).toBe(true);
+
+            fs.mkdirSync(workspaceDir, { recursive: true });
+            fs.writeFileSync(path.join(workspaceDir, 'skills.json'), JSON.stringify({
+                schemaVersion: 2,
+                agents: [],
+                subagents: ['opencode'],
+                sources: [{ source: sourceName, skills: [], subagents: [] }],
+            }), 'utf8');
+            fs.writeFileSync(path.join(workspaceDir, 'skills.lock.json'), JSON.stringify({
+                schemaVersion: 6,
+                agents: [],
+                subagents: [],
+                sources: {},
+            }), 'utf8');
+            vi.spyOn(SourceResolver.prototype, 'resolve').mockReturnValue(resolvedSource);
+
+            const manager = createManager({ cwd: workspaceDir });
+            const first = await manager.runSync({ update: true });
+            expect(first).toMatchObject({
+                status: 'completed',
+                exitCode: 0,
+                lockWritten: true,
+                subagents: {
+                    detected: 0,
+                    installed: 1,
+                    removed: 0,
+                    sharedFiles: 0,
+                    plugins: { detected: 1, installed: 1, removed: 0 },
+                    sourceReports: [{ source: sourceName, mode: 'none', selected: 0, installed: 1, removed: 0, sharedFiles: 0 }],
+                },
+            });
+            expect(fs.readFileSync(pluginTargetPath, 'utf8')).toBe('module.exports = 1;\n');
+
+            const initialLock = JSON.parse(fs.readFileSync(path.join(workspaceDir, 'skills.lock.json'), 'utf8')) as {
+                sources: { [key: string]: { pluginEntries: { sourcePath: string; targetPath: string; hash: { sha256: string; executable: boolean } }[] } };
+            };
+            expect(initialLock.sources[sourceName].pluginEntries).toHaveLength(1);
+            expect(initialLock.sources[sourceName].pluginEntries[0]).toMatchObject({
+                sourcePath: '.opencode/plugins/plugin.js',
+                targetPath: '.opencode/plugins/plugin.js',
+                hash: { executable: false },
+            });
+
+            writePlugin(pluginSourcePath, 'module.exports = 2;\n');
+            expect(runner.run(sourceDir, ['add', '.']).ok).toBe(true);
+            expect(runner.run(sourceDir, ['commit', '-m', 'update plugin']).ok).toBe(true);
+
+            const locked = await manager.runSync();
+            expect(locked).toMatchObject({
+                status: 'completed',
+                lockWritten: false,
+                subagents: { installed: 1, plugins: { detected: 1, installed: 1, removed: 0 } },
+            });
+            expect(fs.readFileSync(pluginTargetPath, 'utf8')).toBe('module.exports = 1;\n');
+
+            const unmanagedPath = path.join(workspaceDir, '.opencode/plugins/manual.js');
+            writePlugin(unmanagedPath, 'module.exports = "manual";\n');
+            fs.rmSync(pluginSourcePath);
+            expect(runner.run(sourceDir, ['add', '.']).ok).toBe(true);
+            expect(runner.run(sourceDir, ['commit', '-m', 'remove plugin']).ok).toBe(true);
+
+            const pruned = await manager.runSync({ update: true });
+            expect(pruned).toMatchObject({
+                status: 'completed',
+                exitCode: 0,
+                lockWritten: true,
+                subagents: {
+                    detected: 0,
+                    installed: 0,
+                    removed: 1,
+                    sharedFiles: 0,
+                    plugins: { detected: 0, installed: 0, removed: 1 },
+                    sourceReports: [{ source: sourceName, mode: 'none', selected: 0, installed: 0, removed: 1, sharedFiles: 0 }],
+                },
+            });
+            expect(fs.existsSync(pluginTargetPath)).toBe(false);
+            expect(fs.existsSync(unmanagedPath)).toBe(true);
+        }
+        finally {
+            fs.rmSync(root, { recursive: true, force: true });
+        }
+    });
+
+    test('preserves nested plugin paths and executable bits through update and lock', async () => {
+        const root = createTempDir();
+        const sourceDir = path.join(root, 'source');
+        const workspaceDir = path.join(root, 'workspace');
+        const sourceName = 'local/executable-plugin';
+        const pluginSourcePath = path.join(sourceDir, '.opencode/plugins/nested/loader.bin');
+        const pluginTargetPath = path.join(workspaceDir, '.opencode/plugins/nested/loader.bin');
+        const resolvedSource: ResolvedSource = {
+            ok: true,
+            handler: 'github',
+            provider: 'github',
+            url: sourceDir,
+            ref: null,
+            subpath: null,
+            webUrl: sourceDir,
+        };
+
+        try {
+            createSubagentSourceRepository(sourceDir);
+            writePlugin(pluginSourcePath, '#!/bin/sh\nexit 0\n', true);
+            const runner = new GitRunner();
+            expect(runner.run(sourceDir, ['add', '.']).ok).toBe(true);
+            expect(runner.run(sourceDir, ['commit', '-m', 'add executable nested plugin']).ok).toBe(true);
+
+            fs.mkdirSync(workspaceDir, { recursive: true });
+            fs.writeFileSync(path.join(workspaceDir, 'skills.json'), JSON.stringify({
+                schemaVersion: 2,
+                agents: [],
+                subagents: ['opencode'],
+                sources: [{ source: sourceName, skills: [], subagents: [] }],
+            }), 'utf8');
+            fs.writeFileSync(path.join(workspaceDir, 'skills.lock.json'), JSON.stringify({
+                schemaVersion: 6,
+                agents: [],
+                subagents: [],
+                sources: {},
+            }), 'utf8');
+            vi.spyOn(SourceResolver.prototype, 'resolve').mockReturnValue(resolvedSource);
+
+            const result = await createManager({ cwd: workspaceDir }).runSync({ update: true });
+            expect(result).toMatchObject({
+                status: 'completed',
+                subagents: {
+                    detected: 0,
+                    installed: 1,
+                    plugins: { detected: 1, installed: 1, removed: 0 },
+                },
+            });
+            expect(fs.readFileSync(pluginTargetPath, 'utf8')).toBe('#!/bin/sh\nexit 0\n');
+            expect(fs.statSync(pluginTargetPath).mode & 0o111).toBe(0o111);
+
+            const lock = JSON.parse(fs.readFileSync(path.join(workspaceDir, 'skills.lock.json'), 'utf8')) as {
+                sources: { [key: string]: { pluginEntries: { sourcePath: string; targetPath: string; hash: { sha256: string; executable: boolean } }[] } };
+            };
+            expect(lock.sources[sourceName].pluginEntries).toHaveLength(1);
+            expect(lock.sources[sourceName].pluginEntries[0]).toMatchObject({
+                sourcePath: '.opencode/plugins/nested/loader.bin',
+                targetPath: '.opencode/plugins/nested/loader.bin',
+                hash: { executable: true },
+            });
+            expect(lock.sources[sourceName].pluginEntries[0]?.hash.sha256).toMatch(/^[a-f0-9]{64}$/);
+        }
+        finally {
+            fs.rmSync(root, { recursive: true, force: true });
+        }
+    });
+
+    test('rejects the same plugin target from two sources before writing or changing the lock', async () => {
+        const root = createTempDir();
+        const sourceDir = path.join(root, 'source');
+        const workspaceDir = path.join(root, 'workspace');
+        const firstSource = 'local/plugins-a';
+        const secondSource = 'local/plugins-b';
+        const pluginTargetPath = path.join(workspaceDir, '.opencode/plugins/plugin.js');
+        const resolvedSource: ResolvedSource = {
+            ok: true,
+            handler: 'github',
+            provider: 'github',
+            url: sourceDir,
+            ref: null,
+            subpath: null,
+            webUrl: sourceDir,
+        };
+
+        try {
+            createSubagentSourceRepository(sourceDir);
+            writePlugin(path.join(sourceDir, '.opencode/plugins/plugin.js'), 'module.exports = true;\n');
+            const runner = new GitRunner();
+            expect(runner.run(sourceDir, ['add', '.']).ok).toBe(true);
+            expect(runner.run(sourceDir, ['commit', '-m', 'add shared plugin target']).ok).toBe(true);
+
+            fs.mkdirSync(workspaceDir, { recursive: true });
+            fs.writeFileSync(path.join(workspaceDir, 'skills.json'), JSON.stringify({
+                schemaVersion: 2,
+                agents: [],
+                subagents: ['opencode'],
+                sources: [
+                    { source: firstSource, skills: [], subagents: [] },
+                    { source: secondSource, skills: [], subagents: [] },
+                ],
+            }), 'utf8');
+            const initialLock = `${JSON.stringify({ schemaVersion: 6, agents: [], subagents: [], sources: {} }, null, 4)}\n`;
+            fs.writeFileSync(path.join(workspaceDir, 'skills.lock.json'), initialLock, 'utf8');
+            vi.spyOn(SourceResolver.prototype, 'resolve').mockReturnValue(resolvedSource);
+
+            const result = await createManager({ cwd: workspaceDir }).runSync({ update: true, force: true });
+            expect(result).toMatchObject({
+                status: 'subagent-failed',
+                exitCode: 1,
+                subagents: {
+                    subagentFailed: true,
+                    errors: [{ message: 'Managed file ownership conflicts detected.' }],
+                },
+            });
+            expect(fs.existsSync(pluginTargetPath)).toBe(false);
+            expect(fs.readFileSync(path.join(workspaceDir, 'skills.lock.json'), 'utf8')).toBe(initialLock);
         }
         finally {
             fs.rmSync(root, { recursive: true, force: true });
@@ -267,3 +509,11 @@ describe('subagent sync integration', () => {
         }
     });
 });
+
+function writePlugin(filePath: string, content: string, executable = false): void {
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    fs.writeFileSync(filePath, content, 'utf8');
+    if (executable) {
+        fs.chmodSync(filePath, 0o755);
+    }
+}

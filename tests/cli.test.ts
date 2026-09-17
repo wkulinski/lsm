@@ -23,7 +23,7 @@ describe('CLI composition', () => {
         expect(output).toContain('Usage: lsm [options] [command]');
         expect(output).toContain('sync');
         expect(output).toContain('publish');
-        expect(output).toContain('Synchronize managed skills and OpenCode subagents');
+        expect(output).toContain('Synchronize managed skills, OpenCode subagents and plugins');
         expect(output).not.toContain('Usage: lsm sync [options]');
     });
 

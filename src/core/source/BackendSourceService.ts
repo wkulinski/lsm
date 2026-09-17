@@ -1,4 +1,5 @@
 import SkillDiscovery from './SkillDiscovery';
+import PluginDiscovery from './PluginDiscovery';
 import SubagentDiscovery from './SubagentDiscovery';
 import type { SubagentEntry } from '../types/manifest';
 import type {
@@ -48,6 +49,7 @@ export default class BackendSourceService {
         {
             skills = null,
             subagents = null,
+            includePlugins = false,
             mode = 'update',
             resolvedCommit = null,
             lockedSubagentEntries = [],
@@ -55,6 +57,7 @@ export default class BackendSourceService {
         }: {
             skills?: string[] | null;
             subagents?: string[] | null;
+            includePlugins?: boolean;
             mode?: 'update' | 'locked';
             resolvedCommit?: string | null;
             lockedSubagentEntries?: SubagentEntry[];
@@ -102,12 +105,19 @@ export default class BackendSourceService {
                 if (!subagentResult.ok) {
                     return subagentResult;
                 }
+                const pluginResult = includePlugins
+                    ? new PluginDiscovery().discoverWorkspace(workspace)
+                    : { ok: true as const, plugins: [] };
+                if (!pluginResult.ok) {
+                    return pluginResult;
+                }
 
                 return {
                     ...skillResult,
                     listedAt: new Date().toISOString(),
                     subagents: subagentResult.subagents,
                     subagentSharedFiles: subagentResult.sharedFiles,
+                    plugins: pluginResult.plugins,
                 };
             },
         ) as SourceDiscoverySuccess | FailureResult;

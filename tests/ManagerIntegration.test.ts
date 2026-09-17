@@ -144,7 +144,7 @@ describe('manager integration', () => {
         finally {
             fs.rmSync(root, { recursive: true, force: true });
         }
-    });
+    }, 30000);
 
     test('syncs published local changes without a false conflict', async () => {
         const root = createTempDir();

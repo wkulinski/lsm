@@ -77,6 +77,7 @@ export default class SyncAdapter {
                 subagentDeclarations.declarations({
                     source: subagentSource,
                     subagents: meta.subagents ?? [],
+                    plugins: meta.plugins ?? [],
                     sharedFiles: meta.subagentSharedFiles ?? [],
                 }).filter(declaration => declaration.targetPath.startsWith('.agents/skills/_shared/'))
                     .forEach((declaration) => {

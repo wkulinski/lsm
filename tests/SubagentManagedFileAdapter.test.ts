@@ -15,6 +15,12 @@ describe('SubagentManagedFileAdapter', () => {
                 content: Buffer.from('# Reviewer\n'),
                 hash: { sha256: 'ignored', executable: false },
             }],
+            plugins: [{
+                sourcePath: '.opencode/plugins/plugin.js',
+                targetPath: '.opencode/plugins/plugin.js',
+                content: Buffer.from('module.exports = true;\n'),
+                hash: { sha256: 'ignored', executable: true },
+            }],
             sharedFiles: [{
                 path: '.agents/skills/_shared/references/runtime.md',
                 content: Buffer.from('# Runtime\n'),
@@ -36,6 +42,13 @@ describe('SubagentManagedFileAdapter', () => {
                 targetPath: '.opencode/agents/reviewer.md',
                 content: Buffer.from('# Reviewer\n'),
                 executable: false,
+            },
+            {
+                owner: 'upstream',
+                sourcePath: '.opencode/plugins/plugin.js',
+                targetPath: '.opencode/plugins/plugin.js',
+                content: Buffer.from('module.exports = true;\n'),
+                executable: true,
             },
         ]);
     });

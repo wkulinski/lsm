@@ -1,6 +1,6 @@
 import path from 'node:path';
 
-import type { SharedFileContentEntry, SubagentDefinition } from '../types';
+import type { PluginDefinition, SharedFileContentEntry, SubagentDefinition } from '../types';
 import type { ManagedFileDeclaration } from '../sync/ManagedFileSynchronizer';
 
 const SHARED_ROOT = '.agents/skills/_shared';
@@ -9,10 +9,12 @@ export default class SubagentManagedFileAdapter {
     public declarations({
         source,
         subagents,
+        plugins = [],
         sharedFiles,
     }: {
         source: string;
         subagents: SubagentDefinition[];
+        plugins?: PluginDefinition[];
         sharedFiles: SharedFileContentEntry[];
     }): ManagedFileDeclaration[] {
         const declarations: ManagedFileDeclaration[] = subagents.map(subagent => ({
@@ -22,6 +24,14 @@ export default class SubagentManagedFileAdapter {
             content: subagent.content,
             executable: subagent.hash.executable,
         }));
+
+        declarations.push(...plugins.map(plugin => ({
+            owner: source,
+            sourcePath: plugin.sourcePath,
+            targetPath: plugin.targetPath,
+            content: plugin.content,
+            executable: plugin.hash.executable,
+        })));
 
         sharedFiles.forEach((file) => {
             const sourcePath = file.path.replace(/\\/g, '/');

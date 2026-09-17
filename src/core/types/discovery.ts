@@ -55,6 +55,13 @@ export interface SkillDirectoryFile {
     executable: boolean;
 }
 
+export interface PluginDefinition {
+    sourcePath: string;
+    targetPath: string;
+    content: Buffer;
+    hash: ManagedFileHash;
+}
+
 export interface CollectedSkillDirectory {
     sourcePath: string;
     files: SkillDirectoryFile[];
@@ -75,6 +82,7 @@ export interface DiscoveredSourceMeta {
     managedSharedFileHashes?: ManagedFileHashEntry[];
     subagents?: SubagentDefinition[];
     subagentSharedFiles?: SharedFileContentEntry[];
+    plugins?: PluginDefinition[];
     missingRequested: string[];
     resolved: ResolvedSourceMeta;
 }
@@ -105,8 +113,14 @@ export interface SubagentDiscoverySuccess {
     sharedFiles: SharedFileContentEntry[];
 }
 
+export interface PluginDiscoverySuccess {
+    ok: true;
+    plugins: PluginDefinition[];
+}
+
 export interface SourceDiscoverySuccess extends ListSkillsSuccess {
     listedAt: string;
     subagents: SubagentDefinition[];
     subagentSharedFiles: SharedFileContentEntry[];
+    plugins: PluginDefinition[];
 }

@@ -6,6 +6,7 @@ updated through the skills synchronization workflow.
 
 - `$agent-cache-clear`
 - `$code-implement`
+- `$code-review`
 - `$commit-message-write`
 - `$context-refresh`
 - `$docs-sync`
@@ -17,7 +18,9 @@ updated through the skills synchronization workflow.
 - `$handoff-refresh`
 - `$llm-skills-manager`
 - `$npm-release-manager`
+- `$plan-execute`
 - `$qa-run`
 - `$review-quick`
 - `$rules-sync`
 - `$skills-index-refresh`
+- `$task-plan`

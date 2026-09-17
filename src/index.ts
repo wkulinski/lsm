@@ -28,6 +28,7 @@ export type {
     SyncConfirmationRequest,
     SyncInstallResult,
     SyncPlan,
+    SyncPluginSummary,
     SyncPreflight,
     SyncPreflightConflict,
     SyncRemovalSummary,
