@@ -145,7 +145,12 @@ describe('SubagentSyncPhase', () => {
                 discovered: createDiscovered({ plugins: [createPlugin('# New plugin\n')] }),
             });
 
-            expect(updated).toMatchObject({ subagentFailed: false, installed: 1, removed: 0 });
+            expect(updated).toMatchObject({
+                subagentFailed: false,
+                installed: 0,
+                removed: 0,
+                plugins: { detected: 1, installed: 1, removed: 0 },
+            });
             expect(fs.readFileSync(pluginPath, 'utf8')).toBe('# New plugin\n');
 
             const pruned = phase.synchronize({
@@ -159,7 +164,12 @@ describe('SubagentSyncPhase', () => {
                 discovered: createDiscovered(),
             });
 
-            expect(pruned).toMatchObject({ subagentFailed: false, installed: 0, removed: 1 });
+            expect(pruned).toMatchObject({
+                subagentFailed: false,
+                installed: 0,
+                removed: 0,
+                plugins: { detected: 0, installed: 0, removed: 1 },
+            });
             expect(fs.existsSync(pluginPath)).toBe(false);
         }
         finally {

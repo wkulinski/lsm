@@ -155,10 +155,10 @@ describe('subagent sync integration', () => {
                 lockWritten: true,
                 subagents: {
                     detected: 1,
-                    installed: 2,
+                    installed: 1,
                     sharedFiles: 2,
                     plugins: { detected: 1, installed: 1, removed: 0 },
-                    sourceReports: [{ source: sourceName, mode: 'explicit', selected: 1, installed: 2, removed: 0, sharedFiles: 2 }],
+                    sourceReports: [{ source: sourceName, mode: 'explicit', selected: 1, installed: 1, removed: 0, sharedFiles: 2 }],
                 },
             });
             expect(fs.existsSync(path.join(workspaceDir, '.agents', 'skills', 'example', 'SKILL.md'))).toBe(true);
@@ -229,11 +229,11 @@ describe('subagent sync integration', () => {
                 lockWritten: true,
                 subagents: {
                     detected: 0,
-                    installed: 1,
+                    installed: 0,
                     removed: 0,
                     sharedFiles: 0,
                     plugins: { detected: 1, installed: 1, removed: 0 },
-                    sourceReports: [{ source: sourceName, mode: 'none', selected: 0, installed: 1, removed: 0, sharedFiles: 0 }],
+                    sourceReports: [{ source: sourceName, mode: 'none', selected: 0, installed: 0, removed: 0, sharedFiles: 0 }],
                 },
             });
             expect(fs.readFileSync(pluginTargetPath, 'utf8')).toBe('module.exports = 1;\n');
@@ -256,7 +256,7 @@ describe('subagent sync integration', () => {
             expect(locked).toMatchObject({
                 status: 'completed',
                 lockWritten: false,
-                subagents: { installed: 1, plugins: { detected: 1, installed: 1, removed: 0 } },
+                subagents: { installed: 0, plugins: { detected: 1, installed: 1, removed: 0 } },
             });
             expect(fs.readFileSync(pluginTargetPath, 'utf8')).toBe('module.exports = 1;\n');
 
@@ -274,10 +274,10 @@ describe('subagent sync integration', () => {
                 subagents: {
                     detected: 0,
                     installed: 0,
-                    removed: 1,
+                    removed: 0,
                     sharedFiles: 0,
                     plugins: { detected: 0, installed: 0, removed: 1 },
-                    sourceReports: [{ source: sourceName, mode: 'none', selected: 0, installed: 0, removed: 1, sharedFiles: 0 }],
+                    sourceReports: [{ source: sourceName, mode: 'none', selected: 0, installed: 0, removed: 0, sharedFiles: 0 }],
                 },
             });
             expect(fs.existsSync(pluginTargetPath)).toBe(false);
@@ -332,7 +332,7 @@ describe('subagent sync integration', () => {
                 status: 'completed',
                 subagents: {
                     detected: 0,
-                    installed: 1,
+                    installed: 0,
                     plugins: { detected: 1, installed: 1, removed: 0 },
                 },
             });

@@ -109,14 +109,25 @@ export default class SubagentSyncPhase {
 
     private resultForPlan(plan: ManagedFilePlan, discovered: DiscoveredSources, lock: LockData): SubagentSyncResult {
         const sharedFiles = plan.files.filter(file => file.targetPath.startsWith('.agents/skills/_shared/')).length;
+        const pluginTargets = new Set(
+            Object.values(discovered).flatMap(meta => (meta.plugins ?? []).map(plugin => plugin.targetPath)),
+        );
+        const previousSubagentTargets = new Set(
+            Object.values(lock.sources).flatMap(sourceMeta => [
+                ...(sourceMeta.subagentEntries ?? []).map(entry => entry.targetPath),
+                ...(sourceMeta.sharedEntries ?? [])
+                    .filter(entry => entry.owners.some(owner => owner.startsWith('subagent:')))
+                    .map(entry => entry.targetPath),
+            ]),
+        );
         const plugins = this.pluginSummary({ discovered, lock, plan });
         return {
             subagentFailed: false,
             sources: Object.keys(discovered).length,
             sourceReports: this.sourceReports({ discovered, lock, plan }),
             detected: this.detected(discovered),
-            installed: plan.files.length - sharedFiles,
-            removed: plan.removals.length,
+            installed: plan.files.filter(file => !file.targetPath.startsWith('.agents/skills/_shared/') && !pluginTargets.has(file.targetPath)).length,
+            removed: plan.removals.filter(target => previousSubagentTargets.has(target)).length,
             sharedFiles,
             ...(plugins ? { plugins } : {}),
             errors: [],
@@ -153,10 +164,10 @@ export default class SubagentSyncPhase {
     }): SyncSourceReport[] {
         return Object.entries(discovered).map(([source, meta]) => {
             const sourceFiles = plan?.files.filter(file => file.owner === source) ?? [];
+            const sourcePluginTargets = new Set((meta.plugins ?? []).map(plugin => plugin.targetPath));
             const sourceLock = Object.hasOwn(lock.sources, source) ? lock.sources[source] : null;
             const previousTargets = new Set([
                 ...(sourceLock?.subagentEntries ?? []).map(entry => entry.targetPath),
-                ...(sourceLock?.pluginEntries ?? []).map(entry => entry.targetPath),
                 ...(sourceLock?.sharedEntries ?? [])
                     .filter(entry => entry.owners.some(owner => owner.startsWith('subagent:')))
                     .map(entry => entry.targetPath),
@@ -166,7 +177,7 @@ export default class SubagentSyncPhase {
                 source,
                 mode: meta.subagentMode ?? (meta.subagents?.length ? 'all' : 'none'),
                 selected: meta.subagents?.length ?? 0,
-                installed: sourceFiles.length - sharedFiles,
+                installed: sourceFiles.filter(file => !file.targetPath.startsWith('.agents/skills/_shared/') && !sourcePluginTargets.has(file.targetPath)).length,
                 removed: plan?.removals.filter(target => previousTargets.has(target)).length ?? 0,
                 sharedFiles,
             };
