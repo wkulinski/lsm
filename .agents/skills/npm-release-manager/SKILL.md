@@ -67,19 +67,22 @@ Jeśli dowolna kontrola zakończy się błędem, zatrzymaj release i pokaż bł�
 Poproś użytkownika o wybór `patch`, `minor`, `major` albo konkretnej wersji.
 Nie wybieraj poziomu samodzielnie.
 
-Sprawdź proponowaną wersję bez modyfikowania plików:
+Odczytaj obecną wersję lokalną, nie modyfikując plików:
 
 ```bash
-npm version patch --dry-run
+node -p "require('./package.json').version"
 ```
 
-Zastąp `patch` wybraną wartością. Dla konkretnej wersji użyj np.:
+**Nie używaj `npm version --dry-run` do sprawdzania wersji.** Polecenie
+`version` nie deklaruje `dry-run` w swoich parametrach (zweryfikowane na npm
+10.9.4), więc flaga jest po cichu ignorowana, a `npm version` realnie podbija
+wersję, tworzy commit i tag. Przed użyciem sprawdź `npm version --help` w swojej
+wersji npm — jeśli `--dry-run` nie jest tam wymieniony, traktuj je jako
+mutujące. W ramach tego skilla nie ma bezpiecznego sposobu cofnięcia takiego
+commita i tagu (zakaz `git reset --hard` i `git tag -d`), więc pomyłka
+zanieczyszcza repozytorium na stałe.
 
-```bash
-npm version 0.1.1 --dry-run
-```
-
-Sprawdź, czy wersja nie istnieje już w registry:
+Sprawdź, czy docelowa wersja nie istnieje już w registry:
 
 ```bash
 npm view <package-name>@<version> version
@@ -87,6 +90,11 @@ npm view <package-name>@<version> version
 
 404 oznacza, że wersja nie jest jeszcze opublikowana. Każdy inny wynik wymaga
 wyboru nowej wersji.
+
+Nie używaj `npm view . version` jako odczytu wersji lokalnej. To polecenie pyta
+registry o pakiet o nazwie z lokalnego `package.json`, więc zwraca wersję
+opublikowaną, a nie wersję z working tree; po lokalnym podbiciu wersji pokaże
+starą wartość.
 
 ### Plan do potwierdzenia
 
@@ -115,6 +123,12 @@ Po potwierdzeniu użytkownika:
 
    `npm version` aktualizuje `package.json`, lockfile, tworzy commit i tag
    `v<version>`.
+
+   Przed uruchomieniem potwierdź, że lokalna wersja z
+   `node -p "require('./package.json').version"` jest zgodna z oczekiwaną
+   wersją wyjściową. To jedyny moment na wykrycie rozjazdu przed utworzeniem
+   commita i tagu — po wykonaniu `npm version` cofnięcie wymagałoby operacji
+   zabronionych w tym skillu.
 
 2. Sprawdź commit i tag:
 
