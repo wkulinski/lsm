@@ -251,6 +251,12 @@ tag release na npm.
 
 ## Pomoc
 
+Wersja CLI:
+
+```bash
+node bin/lsm --version
+```
+
 Lista dostępnych komend:
 
 ```bash

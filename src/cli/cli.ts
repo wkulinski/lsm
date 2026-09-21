@@ -1,7 +1,10 @@
+import packageJson from '../../package.json' with { type: 'json' };
 import { Command, CommanderError } from 'commander';
 
 import { runPublishCommand, type PublishCommandOptions } from './commands/publishCommand';
 import { runSyncCommand, type SyncCommandOptions } from './commands/syncCommand';
+
+const ROOT_ONLY_OPTIONS = new Set(['-h', '--help', '-V', '--version']);
 
 export async function runCli(argv: string[]): Promise<number> {
     let exitCode = 0;
@@ -9,6 +12,7 @@ export async function runCli(argv: string[]): Promise<number> {
     const program = new Command()
         .name('lsm')
         .description('LLM Skills Manager')
+        .version(packageJson.version)
         .showHelpAfterError()
         .exitOverride()
     ;
@@ -56,7 +60,7 @@ export async function runCli(argv: string[]): Promise<number> {
 }
 
 function normalizeCliArgv(argv: string[]): string[] {
-    if (argv.length === 0 || (argv[0]?.startsWith('-') && argv[0] !== '-h' && argv[0] !== '--help')) {
+    if (argv.length === 0 || (argv[0]?.startsWith('-') && !ROOT_ONLY_OPTIONS.has(argv[0]))) {
         return ['sync', ...argv];
     }
 
