@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import SkillFrontmatterParser, { type SkillContext } from './SkillFrontmatterParser';
-import { hasSymlinkInPath, isPathInside } from '../filesystem/PathUtils';
+import { SWAP_DIRECTORY_PREFIX, hasSymlinkInPath, isPathInside } from '../filesystem/PathUtils';
 import type { SkillDefinition } from '../types/discovery';
 
 export interface DiscoveredSkills {
@@ -96,7 +96,7 @@ export default class SkillScanner {
         }
 
         entries.forEach((entry) => {
-            if (!entry.isDirectory()) {
+            if (!entry.isDirectory() || entry.name.startsWith(SWAP_DIRECTORY_PREFIX)) {
                 return;
             }
             const skillDir = path.join(dir, entry.name);
@@ -177,7 +177,7 @@ export default class SkillScanner {
             if (!entry.isDirectory()) {
                 return;
             }
-            if (this.skipDirs.has(entry.name)) {
+            if (this.skipDirs.has(entry.name) || entry.name.startsWith(SWAP_DIRECTORY_PREFIX)) {
                 return;
             }
             const nested = this.findSkillDirs(path.join(dir, entry.name), depth + 1, maxDepth);

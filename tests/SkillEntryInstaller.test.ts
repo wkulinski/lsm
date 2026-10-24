@@ -33,6 +33,10 @@ describe('SkillEntryInstaller', () => {
                 };
             };
 
+            const existingSkillDir = path.join(tempDir, '.agents', 'skills', 'example');
+            fs.mkdirSync(existingSkillDir, { recursive: true });
+            fs.writeFileSync(path.join(existingSkillDir, 'stale.txt'), 'stale\n', 'utf8');
+
             const installer = new SkillEntryInstaller({ root: tempDir });
             const result = installer.install({
                 source: 'owner/repo',
@@ -48,6 +52,8 @@ describe('SkillEntryInstaller', () => {
                 status: 0,
                 cmd: ['internal-install', 'owner/repo'],
             });
+            expect(fs.readdirSync(existingSkillDir).sort()).toEqual(['SKILL.md', 'nested']);
+            expect(fs.readdirSync(path.join(tempDir, '.agents'))).toEqual(['skills']);
             expect(fs.readFileSync(path.join(tempDir, '.agents', 'skills', 'example', 'SKILL.md'), 'utf8')).toBe('# Example\n');
             expect(fs.readFileSync(path.join(tempDir, '.agents', 'skills', 'example', 'nested', 'config.json'), 'utf8')).toBe('{"enabled":true}\n');
             expect(fs.statSync(path.join(tempDir, '.agents', 'skills', 'example', 'SKILL.md')).mode & 0o111).toBe(0o111);

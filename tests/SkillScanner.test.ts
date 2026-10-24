@@ -77,4 +77,24 @@ describe('SkillScanner', () => {
             fs.rmSync(tempDir, { recursive: true, force: true });
         }
     });
+
+    test('ignores temporary swap directories left inside a skills directory', () => {
+        const tempDir = createTempDir();
+
+        try {
+            const skillsRoot = path.join(tempDir, '.agents', 'skills');
+            const skillMd = ['---', 'name: Real', 'description: Real skill', '---', '', '# Real'].join('\n');
+            writeSkillMd(path.join(skillsRoot, 'real'), skillMd);
+            writeSkillMd(path.join(skillsRoot, '.lsm-swap-abc123', 'previous'), skillMd.replace('Real', 'Leftover'));
+
+            const shallow = new SkillScanner().discover(tempDir, '.agents/skills');
+            const deep = new SkillScanner({ fullDepth: true }).discover(tempDir, '.agents/skills');
+
+            expect(shallow.skills.map(skill => skill.name)).toEqual(['Real']);
+            expect(deep.skills.map(skill => skill.name)).toEqual(['Real']);
+        }
+        finally {
+            fs.rmSync(tempDir, { recursive: true, force: true });
+        }
+    });
 });

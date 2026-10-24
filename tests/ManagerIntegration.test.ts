@@ -146,6 +146,78 @@ describe('manager integration', () => {
         }
     }, 30000);
 
+    test('keeps the installed skill and lock after a transient write failure and recovers on retry', async () => {
+        const root = createTempDir();
+        const sourceDir = path.join(root, 'source');
+        const workspaceDir = path.join(root, 'workspace');
+        const sourceName = 'local/source';
+        const resolvedSource: ResolvedSource = {
+            ok: true,
+            handler: 'github',
+            provider: 'github',
+            url: sourceDir,
+            ref: null,
+            subpath: null,
+            webUrl: sourceDir,
+        };
+
+        try {
+            createSourceRepository(sourceDir);
+            fs.mkdirSync(workspaceDir, { recursive: true });
+            fs.writeFileSync(path.join(workspaceDir, 'skills.json'), JSON.stringify({
+                schemaVersion: 2,
+                agents: ['codex'],
+                sources: [{ source: sourceName, skills: true }],
+            }), 'utf8');
+            fs.writeFileSync(path.join(workspaceDir, 'skills.lock.json'), JSON.stringify({
+                schemaVersion: 5,
+                agents: [],
+                sources: {},
+            }), 'utf8');
+            vi.spyOn(SourceResolver.prototype, 'resolve').mockReturnValue(resolvedSource);
+
+            const manager = createManager({ cwd: workspaceDir });
+            await expect(manager.runSync({ update: true })).resolves.toMatchObject({ status: 'completed' });
+
+            const skillDir = path.join(workspaceDir, '.agents', 'skills', 'example');
+            const localSkillPath = path.join(skillDir, 'SKILL.md');
+            const lockPath = path.join(workspaceDir, 'skills.lock.json');
+            const initialSkill = fs.readFileSync(localSkillPath, 'utf8');
+            const initialLock = fs.readFileSync(lockPath, 'utf8');
+            const updatedSkill = initialSkill.replace('# Example', '# Updated upstream');
+            fs.writeFileSync(path.join(sourceDir, '.agents', 'skills', 'example', 'SKILL.md'), updatedSkill, 'utf8');
+            commitSourceRepository(sourceDir, 'update upstream skill');
+
+            const originalWrite = fs.writeFileSync;
+            let failuresLeft = 1;
+            vi.spyOn(fs, 'writeFileSync').mockImplementation(((file: fs.PathOrFileDescriptor, ...rest: unknown[]) => {
+                if (failuresLeft > 0 && String(file).includes('.lsm-swap-') && String(file).endsWith('SKILL.md')) {
+                    failuresLeft -= 1;
+                    throw new Error('transient write failure');
+                }
+                ;(originalWrite as (...args: unknown[]) => void)(file, ...rest);
+            }) as typeof fs.writeFileSync);
+
+            await expect(manager.runSync({ update: true })).resolves.toMatchObject({
+                status: 'add-failed',
+                exitCode: 1,
+            });
+            expect(fs.readFileSync(localSkillPath, 'utf8')).toBe(initialSkill);
+            expect(fs.readFileSync(lockPath, 'utf8')).toBe(initialLock);
+            expect(fs.readdirSync(path.join(workspaceDir, '.agents')).filter(name => name.startsWith('.lsm-swap-'))).toEqual([]);
+
+            await expect(manager.runSync({ update: true })).resolves.toMatchObject({
+                status: 'completed',
+                exitCode: 0,
+                lockWritten: true,
+            });
+            expect(fs.readFileSync(localSkillPath, 'utf8')).toBe(updatedSkill);
+        }
+        finally {
+            fs.rmSync(root, { recursive: true, force: true });
+        }
+    }, 30000);
+
     test('syncs published local changes without a false conflict', async () => {
         const root = createTempDir();
         const sourceDir = path.join(root, 'source');
