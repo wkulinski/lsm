@@ -45,6 +45,13 @@ The CLI can be run from the repository with:
 node bin/lsm.mjs --help
 ```
 
+## Language
+
+English is the language of this repository. Use it for source code and
+comments, identifiers, CLI and error messages, documentation, tests, commit
+messages, and pull request text. Do not add new user-facing text in another
+language.
+
 ## Coding Style
 
 - Use TypeScript with the existing four-space indentation and single-quote

@@ -19,3 +19,6 @@ docs/HANDOFF.md
 !/.agents/skills/npm-release-manager/**
 /docs/tmp/
 /.opencode/agents/
+/.opencode/plugins/
+/docs/plans/
+/docs/drafts/

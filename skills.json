@@ -20,10 +20,12 @@
                 "qa-run",
                 "review-quick",
                 "rules-sync",
+                "skill-review",
                 "skills-index-refresh",
                 "task-plan",
                 "plan-execute",
-                "code-review"
+                "code-review",
+                "claude-review"
             ],
             "subagents": true,
             "publish": {

@@ -1,6 +1,6 @@
 {
     "schemaVersion": 6,
-    "generatedAt": "2026-09-17T11:02:34.904Z",
+    "generatedAt": "2026-10-23T18:17:31.320Z",
     "agents": [
         "codex"
     ],
@@ -10,25 +10,63 @@
     "sources": {
         "https://github.com/wkulinski/llm-skills": {
             "mode": "explicit",
-            "listedAt": "2026-09-17T11:02:30.305Z",
+            "listedAt": "2026-10-23T18:17:27.315Z",
             "skillEntries": [
                 {
                     "name": "agent-cache-clear",
                     "sourcePath": ".agents/skills/agent-cache-clear",
                     "sharedFiles": [
                         ".agents/skills/_shared/references/runtime-collaboration-guidelines.md",
-                        ".agents/skills/_shared/scripts/env-load.sh"
+                        ".agents/skills/_shared/references/skill-structure-contract.md",
+                        ".agents/skills/_shared/scripts/env-load.sh",
+                        ".agents/skills/_shared/scripts/is-main-module.mjs"
                     ],
                     "hash": {
-                        "treeSha256": "ec58e31ddda536350fa5753da8bd3b3ca270693c2e35ab25fc40783979e633e3",
+                        "treeSha256": "88186c711fd8f2da1ceac2ab2644e6d518ba52dac8c5984b4f8faa7e9a57ac9d",
                         "files": [
                             {
                                 "path": "scripts/clear.mjs",
-                                "sha256": "3e638e69877390fdc548f7d823408359c01eb2a9cac0210cb56c0d1776c8b052"
+                                "sha256": "fb806c52ec486dc3f42ee2bbd66312ca3eda4d4d836736daa177a2a22c021869"
                             },
                             {
                                 "path": "SKILL.md",
-                                "sha256": "b6ae2007a97da14d24e48697facf6055ee35304e4818b97396cbf79d31163a82"
+                                "sha256": "8c32c11baebb986015b1b8bd0c47e88d502248d489b1e0a7f5ece091f7ea4e58"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "claude-review",
+                    "sourcePath": ".agents/skills/claude-review",
+                    "sharedFiles": [
+                        ".agents/skills/_shared/references/repository-context-hybrid.md",
+                        ".agents/skills/_shared/references/skill-routing-policy.md",
+                        ".agents/skills/_shared/references/skill-structure-contract.md",
+                        ".agents/skills/_shared/scripts/artifact-path.mjs",
+                        ".agents/skills/_shared/scripts/change-inventory.mjs",
+                        ".agents/skills/_shared/scripts/env-load.sh",
+                        ".agents/skills/_shared/scripts/is-main-module.mjs",
+                        ".agents/skills/_shared/scripts/secret-detector.mjs",
+                        ".agents/skills/code-review/SKILL.md"
+                    ],
+                    "hash": {
+                        "treeSha256": "dd6e719fed597a58459effcc76b7cb1d959b25d00297bd43666e30517e102c7a",
+                        "files": [
+                            {
+                                "path": "references/execution-contract.md",
+                                "sha256": "f67c796e060495e1182b652aa3c90394cad76109b3606b3281192971bab228a2"
+                            },
+                            {
+                                "path": "references/smoke.md",
+                                "sha256": "27a3d45a22cc2df1ea18bd3e2021d9eb155ae1efdb7f90a08d65eda426f5a3d2"
+                            },
+                            {
+                                "path": "scripts/review-job.mjs",
+                                "sha256": "37b8b5cc2724ad4bb1b5a21dd0de7f94edb25db3ad70611c73224ba6be9698b2"
+                            },
+                            {
+                                "path": "SKILL.md",
+                                "sha256": "9973312ab9b7b59e79e36fdc696efb6bc22441cc9b5362dcb6584ccd621ab5db"
                             }
                         ]
                     }
@@ -41,12 +79,17 @@
                         ".agents/skills/_shared/references/context-subagent-contract.md",
                         ".agents/skills/_shared/references/cqrs-monolith-standard-overrides.md",
                         ".agents/skills/_shared/references/php-symfony-postgres-standards.md",
+                        ".agents/skills/_shared/references/playwright-cli-verification.md",
                         ".agents/skills/_shared/references/repository-context-hybrid.md",
                         ".agents/skills/_shared/references/repository-context-scout-playbook.md",
+                        ".agents/skills/_shared/references/rule-conformance-policy.md",
                         ".agents/skills/_shared/references/runtime-collaboration-guidelines.md",
                         ".agents/skills/_shared/references/runtime-quality-procedures.md",
                         ".agents/skills/_shared/references/skill-routing-policy.md",
+                        ".agents/skills/_shared/references/skill-structure-contract.md",
                         ".agents/skills/_shared/references/symbolic-navigation-and-editing-policy.md",
+                        ".agents/skills/_shared/references/symfony-ux-live-components.md",
+                        ".agents/skills/_shared/references/symfony-ux-twig-components.md",
                         ".agents/skills/_shared/scripts/artifact-path.mjs",
                         ".agents/skills/_shared/scripts/context-criteria.mjs",
                         ".agents/skills/_shared/scripts/context-handoff.mjs",
@@ -55,32 +98,44 @@
                         ".agents/skills/_shared/scripts/context-scout-report-builder.mjs",
                         ".agents/skills/_shared/scripts/context-scout-report.mjs",
                         ".agents/skills/_shared/scripts/env-load.sh",
+                        ".agents/skills/_shared/scripts/is-main-module.mjs",
+                        ".agents/skills/_shared/scripts/playwright-access-prepare.sh",
+                        ".agents/skills/_shared/scripts/playwright-auth-bootstrap.mjs",
+                        ".agents/skills/_shared/scripts/playwright-auth-bootstrap.sh",
+                        ".agents/skills/_shared/scripts/playwright-auth-finalize.mjs",
+                        ".agents/skills/_shared/scripts/playwright-preflight.sh",
                         ".agents/skills/_shared/scripts/read-purpose.mjs",
                         ".agents/skills/_shared/scripts/secret-detector.mjs",
-                        ".agents/skills/_shared/scripts/targeted-check-decision.mjs"
+                        ".agents/skills/_shared/scripts/targeted-check-decision.mjs",
+                        ".agents/skills/_shared/scripts/targeted-check-decision.test.mjs",
+                        ".agents/skills/code-implement/references/state-and-report-contract.md"
                     ],
                     "hash": {
-                        "treeSha256": "13c6f59061bfabd35d0618601efdde100262926d85b998bc68edf42506fcfe11",
+                        "treeSha256": "e42e42fcfb167f8f8ca79636d3d7c51e3a07d0b60e13b1628f9b95c35f2c0af5",
                         "files": [
                             {
+                                "path": "references/state-and-report-contract.md",
+                                "sha256": "faec2d52276b931a8a050eb9937ed293388d05bb3bdc45c02700d0d9057ba433"
+                            },
+                            {
                                 "path": "scripts/change-inspect.mjs",
-                                "sha256": "e3f44a47246e3c4026210db916be23054fa71b00e27700b2b4629566575b40b5"
+                                "sha256": "a17f466bd032b47c103c9ab293499a9c6fc9b15904dd3e7e96fbcb406cf8a4da"
                             },
                             {
                                 "path": "scripts/state-clear.mjs",
-                                "sha256": "8f0b320b61672a4547239154ac1b1efc7f16fcd62a8389d888abfca0764e3c6e"
+                                "sha256": "b4135dd07dcffe40cfb16a6cc5fc0086d3357bb40ca183db90b51aa6cfb77b98"
                             },
                             {
                                 "path": "scripts/state-init.mjs",
-                                "sha256": "46d0a27d3ec213002bbb91eb6a23432126fa1b635e1bd0b1f0d146bc623b3c93"
+                                "sha256": "7e97a1007e55954be81a24790106e88a8cbc3a9a2a4803fd1d576334d8466d02"
                             },
                             {
                                 "path": "scripts/state-log.mjs",
-                                "sha256": "60b1c63d3f26f951162516385fb3393db421d9628828b92d767930fa4ff831b7"
+                                "sha256": "2ba451446aa3ab277a2f8b1f02f3008aeb8c7325f0c5c3e8ae06644fb4b4812e"
                             },
                             {
                                 "path": "scripts/state-readlog.mjs",
-                                "sha256": "47646859e88a9d9dd2129e1c9f9a6e334fe8f94f381476cb263bdbb42e3f3302"
+                                "sha256": "80a0285f403c14d36c9e56905cb44c2e1bed159098b58772d9650507dd4e8e2e"
                             },
                             {
                                 "path": "scripts/state-utils.mjs",
@@ -88,7 +143,7 @@
                             },
                             {
                                 "path": "SKILL.md",
-                                "sha256": "3905c249e2261851484da5a4f4739d3fcac972eeb62f965168d0b7e10865c238"
+                                "sha256": "87fbb461c618445b8b58b5062ab58f3373fedddd80b04e9a0143734f75a145ff"
                             }
                         ]
                     }
@@ -97,19 +152,51 @@
                     "name": "code-review",
                     "sourcePath": ".agents/skills/code-review",
                     "sharedFiles": [
-                        ".agents/skills/_shared/references/context-subagent-contract.md",
+                        ".agents/skills/_shared/references/cqrs-monolith-standard-overrides.md",
+                        ".agents/skills/_shared/references/php-symfony-postgres-standards.md",
+                        ".agents/skills/_shared/references/playwright-cli-verification.md",
                         ".agents/skills/_shared/references/repository-context-hybrid.md",
+                        ".agents/skills/_shared/references/rule-conformance-policy.md",
                         ".agents/skills/_shared/references/runtime-collaboration-guidelines.md",
-                        ".agents/skills/_shared/references/runtime-quality-procedures.md",
                         ".agents/skills/_shared/references/skill-routing-policy.md",
-                        ".agents/skills/_shared/scripts/change-inventory.mjs"
+                        ".agents/skills/_shared/references/symfony-ux-live-components.md",
+                        ".agents/skills/_shared/references/symfony-ux-twig-components.md",
+                        ".agents/skills/_shared/references/task-plan-contract.md",
+                        ".agents/skills/_shared/references/user-facing-behavior-assessment.md",
+                        ".agents/skills/_shared/scripts/change-inventory.mjs",
+                        ".agents/skills/_shared/scripts/is-main-module.mjs",
+                        ".agents/skills/_shared/scripts/playwright-access-prepare.sh",
+                        ".agents/skills/_shared/scripts/playwright-auth-bootstrap.mjs",
+                        ".agents/skills/_shared/scripts/playwright-auth-bootstrap.sh",
+                        ".agents/skills/_shared/scripts/playwright-auth-finalize.mjs",
+                        ".agents/skills/_shared/scripts/playwright-preflight.sh",
+                        ".agents/skills/code-review/references/active-plan.md",
+                        ".agents/skills/code-review/references/plan-review.md",
+                        ".agents/skills/code-review/references/re-review.md",
+                        ".agents/skills/code-review/references/review-checklists.md"
                     ],
                     "hash": {
-                        "treeSha256": "d1b6d457b6b97856ec3bc15c1e0a72057d0b23ef4847cd37aff9ab356c93f282",
+                        "treeSha256": "a5f892828bc0dadf01e9822eb8d7b41d892e7e714a8c29cfcebb28918540f0c8",
                         "files": [
                             {
+                                "path": "references/active-plan.md",
+                                "sha256": "df6f75dc499395996a50eec752bf67f972aca9e21e33b1daa40404755e44df68"
+                            },
+                            {
+                                "path": "references/plan-review.md",
+                                "sha256": "ce069bf83b667a279213e59580bf4d7ebf765716cfc02f716b1f8913b269bd26"
+                            },
+                            {
+                                "path": "references/re-review.md",
+                                "sha256": "e4e64d5e5af91def1802b56f55d1dc0378836aeab0422370218f0b3592e61d17"
+                            },
+                            {
+                                "path": "references/review-checklists.md",
+                                "sha256": "5a5d3686ecdf90174561c2084c0b35cb8d039be135d5f62f234bc6c9d0bbd7d3"
+                            },
+                            {
                                 "path": "SKILL.md",
-                                "sha256": "8eeb404133618cb58ce02d88dd4bb7f83513b733458b18ea58f2cbc6273a648f"
+                                "sha256": "c266cf7783339b5bb52219534f12c497c74ebaffc4e86a069887f23121b3139a"
                             }
                         ]
                     }
@@ -122,19 +209,21 @@
                         ".agents/skills/_shared/references/php-symfony-postgres-standards.md",
                         ".agents/skills/_shared/references/runtime-collaboration-guidelines.md",
                         ".agents/skills/_shared/references/runtime-quality-procedures.md",
+                        ".agents/skills/_shared/references/skill-structure-contract.md",
+                        ".agents/skills/_shared/scripts/is-main-module.mjs",
                         ".agents/skills/_shared/scripts/issue-branch.mjs",
                         ".agents/skills/_shared/scripts/slugify-title.mjs"
                     ],
                     "hash": {
-                        "treeSha256": "f38ae0bae98a1cb3a807bf291948f1942a3f3da084183520e3194e96f11338ce",
+                        "treeSha256": "37cf14558421dfe3ae47288edd201904376acb73057643e57604cf1917cce532",
                         "files": [
                             {
                                 "path": "scripts/commit-message-render.mjs",
-                                "sha256": "11a6fa75620505724332e2363470659051bad255ed16e0ad3b62bee5b34bdc59"
+                                "sha256": "b12d23d3ee4d894132a3dc0341e96ecd19b48daa20186c80ac503460551f41b9"
                             },
                             {
                                 "path": "SKILL.md",
-                                "sha256": "4aa66a9d93458068d13d71aad13f840cac5d937549b849ef8716a9a823888ed7"
+                                "sha256": "a6eb632cdc7a9014b38f9991fa33d0416788b8bf1e15a29c1562b25f55492f68"
                             }
                         ]
                     }
@@ -148,34 +237,19 @@
                         ".agents/skills/_shared/references/php-symfony-postgres-standards.md",
                         ".agents/skills/_shared/references/runtime-collaboration-guidelines.md",
                         ".agents/skills/_shared/references/runtime-quality-procedures.md",
+                        ".agents/skills/_shared/references/skill-structure-contract.md",
                         ".agents/skills/_shared/references/symbolic-navigation-and-editing-policy.md",
                         ".agents/skills/_shared/scripts/change-inventory.mjs",
                         ".agents/skills/_shared/scripts/context-manifest.mjs",
+                        ".agents/skills/_shared/scripts/is-main-module.mjs",
                         ".agents/skills/_shared/scripts/secret-detector.mjs"
                     ],
                     "hash": {
-                        "treeSha256": "3738e8af2f61344380871e73ec842b31f57c6f927c8487d67f4a356357a70645",
+                        "treeSha256": "49e071ece0166e775606ed7807b0cb60ee15cda36cad030de3d52969e777c77c",
                         "files": [
                             {
                                 "path": "SKILL.md",
-                                "sha256": "ca9b9085690af1b18c5084d26e26b6fa028c6dc3b2f4a51bd75573879439aac8"
-                            }
-                        ]
-                    }
-                },
-                {
-                    "name": "dev-mate",
-                    "sourcePath": ".agents/skills/dev-mate",
-                    "sharedFiles": [
-                        ".agents/skills/_shared/references/runtime-collaboration-guidelines.md",
-                        ".agents/skills/_shared/scripts/env-load.sh"
-                    ],
-                    "hash": {
-                        "treeSha256": "b09e0fb25e751f41d36c58a48a39832604ada65beafab5d24a8fe1c3ddcdbad5",
-                        "files": [
-                            {
-                                "path": "SKILL.md",
-                                "sha256": "8648d473fd42a5322e1dbb43e2033766600438e332efaf277f481747ef049c9d"
+                                "sha256": "cf0aa37b5e8e0fde272673bbe07782ab70e64500344b7f54374a072484981e87"
                             }
                         ]
                     }
@@ -187,14 +261,15 @@
                         ".agents/skills/_shared/references/cqrs-monolith-standard-overrides.md",
                         ".agents/skills/_shared/references/runtime-collaboration-guidelines.md",
                         ".agents/skills/_shared/references/runtime-quality-procedures.md",
+                        ".agents/skills/_shared/references/skill-structure-contract.md",
                         ".agents/skills/_shared/references/symbolic-navigation-and-editing-policy.md"
                     ],
                     "hash": {
-                        "treeSha256": "dc0b8b251a29381154de771d2992f6ee0ec8266b05972f3b13bfd6477cd90655",
+                        "treeSha256": "686d032d5dbf5ae9249cd4e970d637c9eccabee100e7f70379fde9953fa4f439",
                         "files": [
                             {
                                 "path": "SKILL.md",
-                                "sha256": "4495bd93a8bb3ee2057e7a768f79bd69ebd751ab7c607e493f3829671b7b9b13"
+                                "sha256": "b0de57a207c625e2eca41e0a6f942617382543fb3e5adeef42f9273753fc2de3"
                             }
                         ]
                     }
@@ -203,14 +278,15 @@
                     "name": "docs-todo",
                     "sourcePath": ".agents/skills/docs-todo",
                     "sharedFiles": [
-                        ".agents/skills/_shared/references/runtime-collaboration-guidelines.md"
+                        ".agents/skills/_shared/references/runtime-collaboration-guidelines.md",
+                        ".agents/skills/_shared/references/skill-structure-contract.md"
                     ],
                     "hash": {
-                        "treeSha256": "7acee45ef77ec034b3f46116a18047c4c5d56f5459bf10d7fc4173352bf057fc",
+                        "treeSha256": "56f401ca6392f3f8c3595e77d4d8bf8ae9084c9c6cc528e87bc60149dcef3b69",
                         "files": [
                             {
                                 "path": "SKILL.md",
-                                "sha256": "bfe58002cbccbd473af0c154cab3977d4d45c2a90c3c40928af78a5295af357a"
+                                "sha256": "f4a998d14ec82d6ee565e0fd6559cd7dd7cae278c8dedcfa9afda5df663b364b"
                             }
                         ]
                     }
@@ -220,20 +296,22 @@
                     "sourcePath": ".agents/skills/gh-issue-review",
                     "sharedFiles": [
                         ".agents/skills/_shared/references/runtime-collaboration-guidelines.md",
+                        ".agents/skills/_shared/references/skill-structure-contract.md",
                         ".agents/skills/_shared/scripts/env-load.sh",
+                        ".agents/skills/_shared/scripts/is-main-module.mjs",
                         ".agents/skills/_shared/scripts/issue-branch.mjs",
                         ".agents/skills/_shared/scripts/slugify-title.mjs"
                     ],
                     "hash": {
-                        "treeSha256": "6bae1c87de9e0b0e27db0a008309ef919dd4bf788cee1dfaa8cc350887e95e63",
+                        "treeSha256": "e22387214b1d5e1cebf66d9d6f8c11b42f7cdec457281abdcb62a8da8247edb1",
                         "files": [
                             {
                                 "path": "scripts/finish.mjs",
-                                "sha256": "945689aa63b3f4ec734d9634fd0a35bff841e831063c52466c66193a02a66d71"
+                                "sha256": "5cfad9e3eda7c4130c224ab2df48205f0faa72d1e32050c26f95b65c517eb3d1"
                             },
                             {
                                 "path": "SKILL.md",
-                                "sha256": "5d2f11a5ba994cfc2e4af3168aa7fb1d64c1cc46c4008a4a98cdcadba985d95f"
+                                "sha256": "7aeb9adb0774e7bb0e1a0d1e631794c77fcff63e06416dc5c78375913e327b93"
                             }
                         ]
                     }
@@ -243,12 +321,14 @@
                     "sourcePath": ".agents/skills/gh-issue-start",
                     "sharedFiles": [
                         ".agents/skills/_shared/references/runtime-collaboration-guidelines.md",
+                        ".agents/skills/_shared/references/skill-structure-contract.md",
                         ".agents/skills/_shared/scripts/env-load.sh",
+                        ".agents/skills/_shared/scripts/is-main-module.mjs",
                         ".agents/skills/_shared/scripts/issue-branch.mjs",
                         ".agents/skills/_shared/scripts/slugify-title.mjs"
                     ],
                     "hash": {
-                        "treeSha256": "657d39fb2eaaf74a6f1d1970ce7dac37c7a552a705c525282270bc7d7520c140",
+                        "treeSha256": "244a9e6809be178a6e69d69b5fdf5b24ca2dddeef4bc24df9eef5a59f2861456",
                         "files": [
                             {
                                 "path": "scripts/branch-preparation.mjs",
@@ -256,11 +336,11 @@
                             },
                             {
                                 "path": "scripts/start.mjs",
-                                "sha256": "3d96332d2784d4453e80e780b4d408889e9404c6e1e8bddec9bfd486ec5c0360"
+                                "sha256": "4f93aa3e1663694017a3e68572386a41a198f78c45729920c043370875ec01c5"
                             },
                             {
                                 "path": "SKILL.md",
-                                "sha256": "c1f328b4b85b3ff61e0ff9ab8f9a9e3e758d98ed0a5d98f58acb8b195efb19b0"
+                                "sha256": "6d672cf86ef784cb4410782fa9bed5c7fac049e30a2025846a67a2bd7bf790bf"
                             }
                         ]
                     }
@@ -270,20 +350,22 @@
                     "sourcePath": ".agents/skills/gh-issue-status-set",
                     "sharedFiles": [
                         ".agents/skills/_shared/references/runtime-collaboration-guidelines.md",
+                        ".agents/skills/_shared/references/skill-structure-contract.md",
                         ".agents/skills/_shared/scripts/env-load.sh",
+                        ".agents/skills/_shared/scripts/is-main-module.mjs",
                         ".agents/skills/_shared/scripts/issue-branch.mjs",
                         ".agents/skills/_shared/scripts/slugify-title.mjs"
                     ],
                     "hash": {
-                        "treeSha256": "9419bb855d450af41f8dcba1d010c893dd85059c7fab658f3b7c7ccc67deaf54",
+                        "treeSha256": "cbeb4ce01e16b71fcae9653c7ca271038cba5e2b3e31930e56eb1df4c172a778",
                         "files": [
                             {
                                 "path": "scripts/set-status.mjs",
-                                "sha256": "0c686735ecdd7f90d2fc1f742edd76cd3042c6c9e1e74cf2b098d78a22189714"
+                                "sha256": "f59af5de85f43821fa10c14d72d477726926320623b552a9c35da944c354e766"
                             },
                             {
                                 "path": "SKILL.md",
-                                "sha256": "4cd932bd3b23c7c92ae96e67a4bb0393bed8f1a30a910d690b26e73e8c50a123"
+                                "sha256": "378bc086d214dc2d33745b5aaccd74b063c2336cd148aec4b249ac7ed5ad3aef"
                             }
                         ]
                     }
@@ -295,26 +377,28 @@
                         ".agents/skills/_shared/references/cqrs-monolith-standard-overrides.md",
                         ".agents/skills/_shared/references/php-symfony-postgres-standards.md",
                         ".agents/skills/_shared/references/runtime-collaboration-guidelines.md",
-                        ".agents/skills/_shared/references/runtime-quality-procedures.md"
+                        ".agents/skills/_shared/references/runtime-quality-procedures.md",
+                        ".agents/skills/_shared/references/skill-structure-contract.md",
+                        ".agents/skills/_shared/scripts/is-main-module.mjs"
                     ],
                     "hash": {
-                        "treeSha256": "ea6f4f5b50940d485cb8762f3659af9628918dcd33cad65fd03aa3bc29b7d9a7",
+                        "treeSha256": "df47a4a060a9b08dad0e2870f4fde67b8f81acadafe7a2c04b884f201afa734f",
                         "files": [
                             {
                                 "path": "scripts/snapshot-clean.mjs",
-                                "sha256": "bc14de2a4b7caf6682489a60858080917f4ff635a0acfb7b5a57b958bd1fb00f"
+                                "sha256": "28f657d1120b14be9065273d8e81b3bc6692e960a3dffca36075cda27e8a63f7"
                             },
                             {
                                 "path": "scripts/snapshot-tools.mjs",
-                                "sha256": "21c684f35e2118922ea143f19aee13bd21cd701a8762a37258f1037e00a6b3cf"
+                                "sha256": "34a056a1c89531f9eca66cc5614c4a45af754db70ce8259e8ac27d41979006ad"
                             },
                             {
                                 "path": "scripts/staging-sanity.mjs",
-                                "sha256": "4e615da4841431ec2379615c81e4f15bfe206a5c7a660c477937bc14924307f1"
+                                "sha256": "4368ca0661db87be1415b170a0641e0de22b195a90ca75eb592aad9e7f705dfb"
                             },
                             {
                                 "path": "SKILL.md",
-                                "sha256": "cb270588848969e4aa5da019878790784dd777f32f31180efbe48011ebe81c93"
+                                "sha256": "4ee801b1f5d00976d9fe76926cb4888da099cc4ebc5f8c927e8b8260421675fb"
                             }
                         ]
                     }
@@ -323,65 +407,15 @@
                     "name": "handoff-refresh",
                     "sourcePath": ".agents/skills/handoff-refresh",
                     "sharedFiles": [
-                        ".agents/skills/_shared/references/runtime-collaboration-guidelines.md"
-                    ],
-                    "hash": {
-                        "treeSha256": "0833697257db891395651a0ef31116dab8a9d934edf6c5835a0993a7f8839609",
-                        "files": [
-                            {
-                                "path": "SKILL.md",
-                                "sha256": "b4dbe5206f98c1d1f1bfb1ec77cf88d6c141adfafbbe979258332575ae8d60d9"
-                            }
-                        ]
-                    }
-                },
-                {
-                    "name": "module-atlas-sync",
-                    "sourcePath": ".agents/skills/module-atlas-sync",
-                    "sharedFiles": [
                         ".agents/skills/_shared/references/runtime-collaboration-guidelines.md",
-                        ".agents/skills/_shared/references/symbolic-navigation-and-editing-policy.md",
-                        ".agents/skills/_shared/scripts/env-load.sh"
+                        ".agents/skills/_shared/references/skill-structure-contract.md"
                     ],
                     "hash": {
-                        "treeSha256": "7c69da3a899278fdbb8c07235ed264d3f020980dfae16882e9749cd0dcb4b278",
+                        "treeSha256": "7a64daaa16efd98cfeb83e0701dd692a28ea3e6e41fb0791b3d2fdf31ba53b02",
                         "files": [
                             {
                                 "path": "SKILL.md",
-                                "sha256": "bb36d66bdd08e80bd56f8f6314c7e2b888916aaa8eadb5675a9e3675d4fa6f11"
-                            }
-                        ]
-                    }
-                },
-                {
-                    "name": "php-structure-refactor",
-                    "sourcePath": ".agents/skills/php-structure-refactor",
-                    "sharedFiles": [
-                        ".agents/skills/_shared/references/symbolic-navigation-and-editing-policy.md",
-                        ".agents/skills/_shared/scripts/env-load.sh"
-                    ],
-                    "hash": {
-                        "treeSha256": "8429d1724848084df75c6f8b3ff1e9fc287940d015a0182aa27cbf15cf2e9854",
-                        "files": [
-                            {
-                                "path": "scripts/php-cs-fixer-json-summary.mjs",
-                                "sha256": "f6d50cc3dd569effcb2ae3e0775a9dcdeea9b738c6bed96f1cf6cfd58082ec52"
-                            },
-                            {
-                                "path": "scripts/phpactor-cli.mjs",
-                                "sha256": "f301ffbbea6cb3a76108a7056c3bf02ab38987f53e46a32759ed4b202fc1521b"
-                            },
-                            {
-                                "path": "scripts/phpactor-rpc.mjs",
-                                "sha256": "ed8b970c6edeb91a3186df4c035988b39225d56f9e76a8b84840ad59149796fa"
-                            },
-                            {
-                                "path": "scripts/rector-json-summary.mjs",
-                                "sha256": "f8b555e6f5d4cd2fda3b1c9d419060052825c2603ed66e9b107806874925b1d5"
-                            },
-                            {
-                                "path": "SKILL.md",
-                                "sha256": "d6caa58949b437901e79b6b8e6725989b10a446e2224d85f25828c16a84682f0"
+                                "sha256": "956f8fc04c58f297347bbd33604e9a515add9426bb5258cb025e13712d04c5e1"
                             }
                         ]
                     }
@@ -391,22 +425,30 @@
                     "sourcePath": ".agents/skills/plan-execute",
                     "sharedFiles": [
                         ".agents/skills/_shared/references/skill-routing-policy.md",
-                        ".agents/skills/_shared/scripts/model-hierarchy.mjs"
+                        ".agents/skills/_shared/references/task-plan-contract.md",
+                        ".agents/skills/_shared/scripts/is-main-module.mjs",
+                        ".agents/skills/_shared/scripts/model-hierarchy.mjs",
+                        ".agents/skills/_shared/scripts/model-leaderboard.mjs",
+                        ".agents/skills/_shared/scripts/task-plan/atomic-file.mjs",
+                        ".agents/skills/_shared/scripts/task-plan/difficulty.mjs",
+                        ".agents/skills/_shared/scripts/task-plan/source.mjs",
+                        ".agents/skills/_shared/scripts/task-plan/store.mjs",
+                        ".agents/skills/_shared/scripts/task-plan/validate.mjs"
                     ],
                     "hash": {
-                        "treeSha256": "e74ace4758031bca94a1ca1a2fc2a16673e97d9991d2c7b35f9f933b34418def",
+                        "treeSha256": "32f1ee035a3e26ea3c4ef132c2c897cd6417a6831e558962e85d0b23f619f3f3",
                         "files": [
                             {
                                 "path": "model-hierarchy.json.dist",
-                                "sha256": "453c27d5936ee438cac325df0a5ee2052befe9b8bde7d1887b238c18b2303bef"
+                                "sha256": "a5c83935705e65abb6ec5546b933f652feb9d22de65a82c90f68b02ba00d2748"
                             },
                             {
                                 "path": "scripts/execute.mjs",
-                                "sha256": "542f8864ab8fef9d36dffc7c57f86e6fc869bfbe5c825d441a9bb7b6b121d6d0"
+                                "sha256": "f42fd7ed65c73cf2d1bef8ab8a027e6425315d1a86bce38e2ebf88d6f5baf581"
                             },
                             {
                                 "path": "SKILL.md",
-                                "sha256": "075b64823b45a936facabf532083ef34c2aa59349c16f75bbcff095354bfbcd0"
+                                "sha256": "00cc51a1be5f4fb06486cdc5518a33bd0695cd3b9cfc6b8464d2c82c43ae006c"
                             }
                         ]
                     }
@@ -415,14 +457,16 @@
                     "name": "qa-run",
                     "sourcePath": ".agents/skills/qa-run",
                     "sharedFiles": [
-                        ".agents/skills/_shared/references/runtime-collaboration-guidelines.md"
+                        ".agents/skills/_shared/references/runtime-collaboration-guidelines.md",
+                        ".agents/skills/_shared/references/skill-structure-contract.md",
+                        ".agents/skills/_shared/scripts/is-main-module.mjs"
                     ],
                     "hash": {
-                        "treeSha256": "9e8121c3c8c305e6c52f8a1ed652033c89818045b9a31387ad887271c5dd370d",
+                        "treeSha256": "d3fefaca04b4372bc99af96afa27e30ed9a78cb93da00d178be2a2fba865773b",
                         "files": [
                             {
                                 "path": "scripts/run-matrix.mjs",
-                                "sha256": "7f4c26d918d89aa8e4c33adb7e304d3299b740fc24acd4025eeea92ad0e9c3ff"
+                                "sha256": "80e078072b47fabffbd1d449b55bfbfcb9a46efaacb3e80978b0dec31e48ef18"
                             },
                             {
                                 "path": "scripts/run-matrix/app/run-matrix-app.mjs",
@@ -522,7 +566,7 @@
                             },
                             {
                                 "path": "SKILL.md",
-                                "sha256": "cb23566f47f530e6d820d06920ff7191b14a4538eef1891507169a5968bf34e9"
+                                "sha256": "0ac99f43981ddce624aa3cda05f5346eac37e32f3f00e7f099a76f45f91ff079"
                             },
                             {
                                 "path": "templates/qa-run.matrix.dist.json",
@@ -537,16 +581,26 @@
                     "sharedFiles": [
                         ".agents/skills/_shared/references/cqrs-monolith-standard-overrides.md",
                         ".agents/skills/_shared/references/php-symfony-postgres-standards.md",
+                        ".agents/skills/_shared/references/playwright-cli-verification.md",
+                        ".agents/skills/_shared/references/rule-conformance-policy.md",
                         ".agents/skills/_shared/references/runtime-collaboration-guidelines.md",
+                        ".agents/skills/_shared/references/skill-structure-contract.md",
                         ".agents/skills/_shared/references/symbolic-navigation-and-editing-policy.md",
-                        ".agents/skills/_shared/scripts/env-load.sh"
+                        ".agents/skills/_shared/references/symfony-ux-live-components.md",
+                        ".agents/skills/_shared/references/symfony-ux-twig-components.md",
+                        ".agents/skills/_shared/scripts/env-load.sh",
+                        ".agents/skills/_shared/scripts/playwright-access-prepare.sh",
+                        ".agents/skills/_shared/scripts/playwright-auth-bootstrap.mjs",
+                        ".agents/skills/_shared/scripts/playwright-auth-bootstrap.sh",
+                        ".agents/skills/_shared/scripts/playwright-auth-finalize.mjs",
+                        ".agents/skills/_shared/scripts/playwright-preflight.sh"
                     ],
                     "hash": {
-                        "treeSha256": "3d4635adcc7c4f3fb5598d48ecdd5ad22e1a2b72c06e431b7e248910abb5dcba",
+                        "treeSha256": "a9a7ab54c46a20ec51d8837744dea348a21d9923211b9e546344c60051a59b47",
                         "files": [
                             {
                                 "path": "SKILL.md",
-                                "sha256": "75a3a2afcbb1b9a5120368d3c3dded801bdfe13695eed27199e2b4808933888c"
+                                "sha256": "d9d34ea65a66899dea83f336737c23f2c9ad444153204cc13abff9da3f53d784"
                             }
                         ]
                     }
@@ -558,14 +612,54 @@
                         ".agents/skills/_shared/references/cqrs-monolith-standard-overrides.md",
                         ".agents/skills/_shared/references/php-symfony-postgres-standards.md",
                         ".agents/skills/_shared/references/runtime-collaboration-guidelines.md",
-                        ".agents/skills/_shared/references/runtime-quality-procedures.md"
+                        ".agents/skills/_shared/references/runtime-quality-procedures.md",
+                        ".agents/skills/_shared/references/skill-structure-contract.md"
                     ],
                     "hash": {
-                        "treeSha256": "88c8e414e26a98f61ce3984de5057bd39e8250e5d15087cb0ea43e7d6d3c636b",
+                        "treeSha256": "8a6f1d003925775b0db60397e09df375736e71b7826bc7e096b13790fdf5cb38",
                         "files": [
                             {
                                 "path": "SKILL.md",
-                                "sha256": "6a4f0702a34aa73a3fc821d244b9302e2fb81a6c67dd48a7135053a70c9c469b"
+                                "sha256": "0ba4e0383db15914143ffa52b6eda906fbb508d81a886f6de4fd2678eab77dd0"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "skill-review",
+                    "sourcePath": ".agents/skills/skill-review",
+                    "sharedFiles": [
+                        ".agents/skills/_shared/references/skill-authoring-standard.md",
+                        ".agents/skills/_shared/references/skill-routing-policy.md",
+                        ".agents/skills/_shared/references/skill-structure-contract.md",
+                        ".agents/skills/_shared/scripts/is-main-module.mjs",
+                        ".agents/skills/skill-review/references/catalog-checklist.md",
+                        ".agents/skills/skill-review/references/conformance-checklist.md",
+                        ".agents/skills/skill-review/references/standard-gap.md",
+                        ".agents/skills/skill-review/scripts/inventory.mjs"
+                    ],
+                    "hash": {
+                        "treeSha256": "ee017d3a937985656a1c655f91433a5c2f3492e7801ba9cfdb55834ec0bd8224",
+                        "files": [
+                            {
+                                "path": "references/catalog-checklist.md",
+                                "sha256": "9a83e7d40f0984e59162e6be4ce8512661df7de3c46ba2918bde02f7133fa0a4"
+                            },
+                            {
+                                "path": "references/conformance-checklist.md",
+                                "sha256": "73fdc8ef2e766533b7aeef9d55eb6628ca6dd9605321f31485b7e5ca42fdd4ea"
+                            },
+                            {
+                                "path": "references/standard-gap.md",
+                                "sha256": "34bd5834743bca4d14476c97b77d3ea2d21594020a1eec3cbc8814fcdaa60aa9"
+                            },
+                            {
+                                "path": "scripts/inventory.mjs",
+                                "sha256": "fe730ae3b6f841f246fc4b9ff14fcc385e341d1ca9dd54a7386db52d7cebcc4d"
+                            },
+                            {
+                                "path": "SKILL.md",
+                                "sha256": "3a568a62442892258a1ae2bd2593c8fd73beffcf8bba6b4036eaba8351f2bb77"
                             }
                         ]
                     }
@@ -574,14 +668,16 @@
                     "name": "skills-index-refresh",
                     "sourcePath": ".agents/skills/skills-index-refresh",
                     "sharedFiles": [
-                        ".agents/skills/_shared/references/runtime-collaboration-guidelines.md"
+                        ".agents/skills/_shared/references/runtime-collaboration-guidelines.md",
+                        ".agents/skills/_shared/references/skill-routing-policy.md",
+                        ".agents/skills/_shared/references/skill-structure-contract.md"
                     ],
                     "hash": {
-                        "treeSha256": "54eaccd4ed969182fcb789bf5886d9dce58738dd4d75546cda5fab3251b39896",
+                        "treeSha256": "0c4aa3e1261e1ce4c9128731d11f45c1551bcceecdd7a25050a8a4836ca6b065",
                         "files": [
                             {
                                 "path": "SKILL.md",
-                                "sha256": "48de1b9cf8164a50ed6a8420bdf24b2aed20d7d1fe1a01e0b3ca675527feff27"
+                                "sha256": "d74160ba1342f3ae48a501e039519d8167953c2546b4bfca5914e9bda699b746"
                             }
                         ]
                     }
@@ -595,6 +691,8 @@
                         ".agents/skills/_shared/references/runtime-collaboration-guidelines.md",
                         ".agents/skills/_shared/references/runtime-quality-procedures.md",
                         ".agents/skills/_shared/references/skill-routing-policy.md",
+                        ".agents/skills/_shared/references/task-plan-contract.md",
+                        ".agents/skills/_shared/references/user-facing-behavior-assessment.md",
                         ".agents/skills/_shared/scripts/artifact-path.mjs",
                         ".agents/skills/_shared/scripts/context-criteria.mjs",
                         ".agents/skills/_shared/scripts/context-handoff.mjs",
@@ -602,41 +700,48 @@
                         ".agents/skills/_shared/scripts/context-scout-hybrid-run.mjs",
                         ".agents/skills/_shared/scripts/context-scout-report.mjs",
                         ".agents/skills/_shared/scripts/env-load.sh",
+                        ".agents/skills/_shared/scripts/is-main-module.mjs",
                         ".agents/skills/_shared/scripts/model-hierarchy.mjs",
+                        ".agents/skills/_shared/scripts/model-leaderboard.mjs",
                         ".agents/skills/_shared/scripts/read-purpose.mjs",
                         ".agents/skills/_shared/scripts/secret-detector.mjs",
-                        ".agents/skills/_shared/scripts/slugify-title.mjs"
+                        ".agents/skills/_shared/scripts/slugify-title.mjs",
+                        ".agents/skills/_shared/scripts/task-plan/atomic-file.mjs",
+                        ".agents/skills/_shared/scripts/task-plan/difficulty.mjs",
+                        ".agents/skills/_shared/scripts/task-plan/source.mjs",
+                        ".agents/skills/_shared/scripts/task-plan/store.mjs",
+                        ".agents/skills/_shared/scripts/task-plan/validate.mjs"
                     ],
                     "hash": {
-                        "treeSha256": "70d03aa4642f393ce2b2d26dc61639f95f170e02318f4dcbfc903288115dda8f",
+                        "treeSha256": "b06e3a43acf2366ae8610116cb5df156ebc8f3998be14f24071e7af481fc5d1d",
                         "files": [
                             {
                                 "path": "scripts/atomic-file.mjs",
-                                "sha256": "f08a69d0f16db7c8b5d0667dcc59acd0ee3dd10b42e41b20a0b7666bb849dc08"
+                                "sha256": "39534187d50d2373fe70f0e25c53421e6c0f142d56823b245f326a018f571497"
                             },
                             {
                                 "path": "scripts/edit.mjs",
-                                "sha256": "c79587eeb604ff069e646632810c22e6814aab0bfdee4082899ea6c981812586"
+                                "sha256": "fe52422abc9a5bd2090ca8d7eefdcf4bfdd8d3eb9445a139fc91a82c54ba0b52"
                             },
                             {
                                 "path": "scripts/review-cycle.mjs",
-                                "sha256": "abf953953f3f9a739695bf378a3e1359b11c08ced3fc215d406ca3a76e04b462"
+                                "sha256": "3e9d53eceb24543f7d794b353bd5172d5a8faf9daa125c280ccc20bd8ebc005e"
                             },
                             {
                                 "path": "scripts/source.mjs",
-                                "sha256": "fa2f5127b7fcb12ba33d06d1a33c0079915a51d68af74f96bff44ced8a45fb87"
+                                "sha256": "745bb84f6b8aef12e3dd184329c2f4374c0d4b3446302adba98561ea2614dd02"
                             },
                             {
                                 "path": "scripts/store.mjs",
-                                "sha256": "23733af4ef9d192b5234c87702ad73875269fea5784a189d6406da018caa52b0"
+                                "sha256": "65bf3ac3216f9df39728f2c6bd7f1ad17b9e818fb1ee430db00ed04457cec432"
                             },
                             {
                                 "path": "scripts/validate.mjs",
-                                "sha256": "30795536106ff54c5da3366dd27c897a663f6f49a54743fbec7d58a8fb848a7e"
+                                "sha256": "e0b6a7b4bb18057cc4dccae7d6a869cfff0eaa13e37e7b4757416801ee2a83d8"
                             },
                             {
                                 "path": "SKILL.md",
-                                "sha256": "89092085eafe3f779f87d7adcb6f6d1deae21eaaa04ae3cd386113aa538c0f26"
+                                "sha256": "7eb0b5cec4ffc623397ab1ee1f700e872dfd63ed0c720d27722b8ae5e3b2876b"
                             }
                         ]
                     }
@@ -672,34 +777,22 @@
                         "sha256": "49e194110dcc3b55dca40818b545a4b34271b3f4c4602ef5a624c69298cd78d1",
                         "executable": false
                     }
-                },
+                }
+            ],
+            "pluginEntries": [
                 {
-                    "name": "frontend-ui-engineer",
-                    "sourcePath": ".opencode/agents/frontend-ui-engineer.md",
-                    "targetPath": ".opencode/agents/frontend-ui-engineer.md",
-                    "sharedFiles": [],
+                    "sourcePath": ".opencode/plugins/context-price-guard.js",
+                    "targetPath": ".opencode/plugins/context-price-guard.js",
                     "hash": {
-                        "sha256": "476bc1288fd0cd96890b6b846df6ff35f9c59bf6fda1fb3aac51033e8e175e2f",
+                        "sha256": "b98bfe15e4878f4d690efed0db60cf42603efa8ada2698663fa12cb9df2c27f6",
                         "executable": false
                     }
                 },
                 {
-                    "name": "implementation-worker",
-                    "sourcePath": ".opencode/agents/implementation-worker.md",
-                    "targetPath": ".opencode/agents/implementation-worker.md",
-                    "sharedFiles": [],
+                    "sourcePath": ".opencode/plugins/session-model-env.js",
+                    "targetPath": ".opencode/plugins/session-model-env.js",
                     "hash": {
-                        "sha256": "0658038855d83261182ac254ad834585ee1284d8ffaadc03837e7398465a407a",
-                        "executable": false
-                    }
-                },
-                {
-                    "name": "runtime-diagnostician",
-                    "sourcePath": ".opencode/agents/runtime-diagnostician.md",
-                    "targetPath": ".opencode/agents/runtime-diagnostician.md",
-                    "sharedFiles": [],
-                    "hash": {
-                        "sha256": "75ca359ac201fe1bc50d06e1e57d1ea1e5ddd9d6b36b58c4026f85579e219dd7",
+                        "sha256": "bf0672f233c6837c225c9cbb69d49d8c9444ee3e16fec602c1e6eec7d507858d",
                         "executable": false
                     }
                 }
@@ -725,7 +818,6 @@
                     },
                     "owners": [
                         "skill:code-implement",
-                        "skill:code-review",
                         "skill:context-refresh",
                         "skill:task-plan"
                     ]
@@ -734,11 +826,12 @@
                     "sourcePath": ".agents/skills/_shared/references/cqrs-monolith-standard-overrides.md",
                     "targetPath": ".agents/skills/_shared/references/cqrs-monolith-standard-overrides.md",
                     "hash": {
-                        "sha256": "1c0c03265f168b756538e4611bfc3c11c42680a645a8a0668b8431c140634bf1",
+                        "sha256": "20cd55de8b2a6d97dccfc4a4bd1238a96e41b51e581133f1dce8ee98c6860429",
                         "executable": false
                     },
                     "owners": [
                         "skill:code-implement",
+                        "skill:code-review",
                         "skill:commit-message-write",
                         "skill:context-refresh",
                         "skill:docs-sync",
@@ -751,11 +844,12 @@
                     "sourcePath": ".agents/skills/_shared/references/php-symfony-postgres-standards.md",
                     "targetPath": ".agents/skills/_shared/references/php-symfony-postgres-standards.md",
                     "hash": {
-                        "sha256": "fff0db95d95fd94462d1aeffa585786ead676b519930bac96a86e6c073d043e5",
+                        "sha256": "ca80b8a52ff9bec429252ff7ef0f40d5d3a646de1c99c840c37ff88845d1b2ee",
                         "executable": false
                     },
                     "owners": [
                         "skill:code-implement",
+                        "skill:code-review",
                         "skill:commit-message-write",
                         "skill:context-refresh",
                         "skill:git-commit",
@@ -764,13 +858,27 @@
                     ]
                 },
                 {
-                    "sourcePath": ".agents/skills/_shared/references/repository-context-hybrid.md",
-                    "targetPath": ".agents/skills/_shared/references/repository-context-hybrid.md",
+                    "sourcePath": ".agents/skills/_shared/references/playwright-cli-verification.md",
+                    "targetPath": ".agents/skills/_shared/references/playwright-cli-verification.md",
                     "hash": {
-                        "sha256": "a6a070fa27da86215cc4e94404866bc37e64066958c45484fb37cdd0a2009442",
+                        "sha256": "1d024bc4f5156fe578fa759d3751055fd4ad1819474da7a883613de23b77238e",
                         "executable": false
                     },
                     "owners": [
+                        "skill:code-implement",
+                        "skill:code-review",
+                        "skill:review-quick"
+                    ]
+                },
+                {
+                    "sourcePath": ".agents/skills/_shared/references/repository-context-hybrid.md",
+                    "targetPath": ".agents/skills/_shared/references/repository-context-hybrid.md",
+                    "hash": {
+                        "sha256": "2a3dcef52b7d2438bde79cc28964d44dd018034aec2a42fefe05b72f6e03b811",
+                        "executable": false
+                    },
+                    "owners": [
+                        "skill:claude-review",
                         "skill:code-implement",
                         "skill:code-review",
                         "skill:task-plan"
@@ -788,10 +896,23 @@
                     ]
                 },
                 {
+                    "sourcePath": ".agents/skills/_shared/references/rule-conformance-policy.md",
+                    "targetPath": ".agents/skills/_shared/references/rule-conformance-policy.md",
+                    "hash": {
+                        "sha256": "443946c5a82f4f5e091fbb1e783fa32abeb4001872890aaf0b2a9a51bced90e8",
+                        "executable": false
+                    },
+                    "owners": [
+                        "skill:code-implement",
+                        "skill:code-review",
+                        "skill:review-quick"
+                    ]
+                },
+                {
                     "sourcePath": ".agents/skills/_shared/references/runtime-collaboration-guidelines.md",
                     "targetPath": ".agents/skills/_shared/references/runtime-collaboration-guidelines.md",
                     "hash": {
-                        "sha256": "7e2ae0bd65ae517a54d38925c956b4b764e4efc1fc81d6656f66d1996f514e40",
+                        "sha256": "c0933c89ab704e2a9effa29cd4f98b5ecb2f20ca54706641368f0cda324f95f1",
                         "executable": false
                     },
                     "owners": [
@@ -800,7 +921,6 @@
                         "skill:code-review",
                         "skill:commit-message-write",
                         "skill:context-refresh",
-                        "skill:dev-mate",
                         "skill:docs-sync",
                         "skill:docs-todo",
                         "skill:gh-issue-review",
@@ -808,7 +928,6 @@
                         "skill:gh-issue-status-set",
                         "skill:git-commit",
                         "skill:handoff-refresh",
-                        "skill:module-atlas-sync",
                         "skill:qa-run",
                         "skill:review-quick",
                         "skill:rules-sync",
@@ -820,12 +939,11 @@
                     "sourcePath": ".agents/skills/_shared/references/runtime-quality-procedures.md",
                     "targetPath": ".agents/skills/_shared/references/runtime-quality-procedures.md",
                     "hash": {
-                        "sha256": "71a7300b61a31060e6f1e16cd1748971da453dd50ba582c63a9329acefc5c6e7",
+                        "sha256": "3beae260e38c5c2ff5c28a38d2126325c7f6f86c8780d4413bc163049dcf6cf5",
                         "executable": false
                     },
                     "owners": [
                         "skill:code-implement",
-                        "skill:code-review",
                         "skill:commit-message-write",
                         "skill:context-refresh",
                         "skill:docs-sync",
@@ -835,17 +953,58 @@
                     ]
                 },
                 {
-                    "sourcePath": ".agents/skills/_shared/references/skill-routing-policy.md",
-                    "targetPath": ".agents/skills/_shared/references/skill-routing-policy.md",
+                    "sourcePath": ".agents/skills/_shared/references/skill-authoring-standard.md",
+                    "targetPath": ".agents/skills/_shared/references/skill-authoring-standard.md",
                     "hash": {
-                        "sha256": "14ee359286cc38d4e74fe51f3b5b28f37a2057096a15301ab95a2ee303d76b5a",
+                        "sha256": "a3554ea64d33aba5c3059e3965c551e8fac6fa89d62a831418e0bd39fca384ae",
                         "executable": false
                     },
                     "owners": [
+                        "skill:skill-review"
+                    ]
+                },
+                {
+                    "sourcePath": ".agents/skills/_shared/references/skill-routing-policy.md",
+                    "targetPath": ".agents/skills/_shared/references/skill-routing-policy.md",
+                    "hash": {
+                        "sha256": "25ed538c5bf01d0891329fa330f95bf3aae9764e0bc1c3677afcfe2147888f37",
+                        "executable": false
+                    },
+                    "owners": [
+                        "skill:claude-review",
                         "skill:code-implement",
                         "skill:code-review",
                         "skill:plan-execute",
+                        "skill:skill-review",
+                        "skill:skills-index-refresh",
                         "skill:task-plan"
+                    ]
+                },
+                {
+                    "sourcePath": ".agents/skills/_shared/references/skill-structure-contract.md",
+                    "targetPath": ".agents/skills/_shared/references/skill-structure-contract.md",
+                    "hash": {
+                        "sha256": "0b954fcf94971dddc0ce3e3255263affcff9ad91fe3a315fde7bcf6c13fe80a5",
+                        "executable": false
+                    },
+                    "owners": [
+                        "skill:agent-cache-clear",
+                        "skill:claude-review",
+                        "skill:code-implement",
+                        "skill:commit-message-write",
+                        "skill:context-refresh",
+                        "skill:docs-sync",
+                        "skill:docs-todo",
+                        "skill:gh-issue-review",
+                        "skill:gh-issue-start",
+                        "skill:gh-issue-status-set",
+                        "skill:git-commit",
+                        "skill:handoff-refresh",
+                        "skill:qa-run",
+                        "skill:review-quick",
+                        "skill:rules-sync",
+                        "skill:skill-review",
+                        "skill:skills-index-refresh"
                     ]
                 },
                 {
@@ -859,9 +1018,58 @@
                         "skill:code-implement",
                         "skill:context-refresh",
                         "skill:docs-sync",
-                        "skill:module-atlas-sync",
-                        "skill:php-structure-refactor",
                         "skill:review-quick"
+                    ]
+                },
+                {
+                    "sourcePath": ".agents/skills/_shared/references/symfony-ux-live-components.md",
+                    "targetPath": ".agents/skills/_shared/references/symfony-ux-live-components.md",
+                    "hash": {
+                        "sha256": "f8a618a6d5d868da9d5201ee45e776237d2d1ae633e7a17382baa559fd720681",
+                        "executable": false
+                    },
+                    "owners": [
+                        "skill:code-implement",
+                        "skill:code-review",
+                        "skill:review-quick"
+                    ]
+                },
+                {
+                    "sourcePath": ".agents/skills/_shared/references/symfony-ux-twig-components.md",
+                    "targetPath": ".agents/skills/_shared/references/symfony-ux-twig-components.md",
+                    "hash": {
+                        "sha256": "051dbb6b18151b2d8a93a12598571d149ffe5c6ecde1d09f6c0e03253c5642b8",
+                        "executable": false
+                    },
+                    "owners": [
+                        "skill:code-implement",
+                        "skill:code-review",
+                        "skill:review-quick"
+                    ]
+                },
+                {
+                    "sourcePath": ".agents/skills/_shared/references/task-plan-contract.md",
+                    "targetPath": ".agents/skills/_shared/references/task-plan-contract.md",
+                    "hash": {
+                        "sha256": "a16acc330160a1927e081984f2b5a15222c7246275917846ee1cc1bbb0feb82a",
+                        "executable": false
+                    },
+                    "owners": [
+                        "skill:code-review",
+                        "skill:plan-execute",
+                        "skill:task-plan"
+                    ]
+                },
+                {
+                    "sourcePath": ".agents/skills/_shared/references/user-facing-behavior-assessment.md",
+                    "targetPath": ".agents/skills/_shared/references/user-facing-behavior-assessment.md",
+                    "hash": {
+                        "sha256": "b9ff79e0bffced20caea0577e5377250d9f2c9cf5ae6be2f5cb3a2f96a85e230",
+                        "executable": false
+                    },
+                    "owners": [
+                        "skill:code-review",
+                        "skill:task-plan"
                     ]
                 },
                 {
@@ -872,6 +1080,7 @@
                         "executable": false
                     },
                     "owners": [
+                        "skill:claude-review",
                         "skill:code-implement",
                         "skill:task-plan"
                     ]
@@ -880,10 +1089,11 @@
                     "sourcePath": ".agents/skills/_shared/scripts/change-inventory.mjs",
                     "targetPath": ".agents/skills/_shared/scripts/change-inventory.mjs",
                     "hash": {
-                        "sha256": "2d5631ff262274e34e5a5ee0132a40e5eb9602ca3ebd404d48b30837557c0795",
+                        "sha256": "d9de7258897536a8bc42bba47bec32ebdc6a492d0ad4277650c648250cd82725",
                         "executable": true
                     },
                     "owners": [
+                        "skill:claude-review",
                         "skill:code-review",
                         "skill:context-refresh"
                     ]
@@ -892,7 +1102,7 @@
                     "sourcePath": ".agents/skills/_shared/scripts/context-criteria.mjs",
                     "targetPath": ".agents/skills/_shared/scripts/context-criteria.mjs",
                     "hash": {
-                        "sha256": "fc098940d64caaf94dc39e9155f94f068f3c756ca6ef36e79057551a48c20574",
+                        "sha256": "f59444c64323ad9b7cff6d59d8700366e8804af38da2692475f687bc7cd2066f",
                         "executable": false
                     },
                     "owners": [
@@ -904,7 +1114,7 @@
                     "sourcePath": ".agents/skills/_shared/scripts/context-handoff.mjs",
                     "targetPath": ".agents/skills/_shared/scripts/context-handoff.mjs",
                     "hash": {
-                        "sha256": "ddd7b53e4f5d1f4e290bf32397c4b7c028fe88e73b7e7e0834b4629e163c5f3d",
+                        "sha256": "20184bf0e3c580db40f866746141ff1f07fd31eb27ed463a438a6be226107309",
                         "executable": false
                     },
                     "owners": [
@@ -916,7 +1126,7 @@
                     "sourcePath": ".agents/skills/_shared/scripts/context-manifest.mjs",
                     "targetPath": ".agents/skills/_shared/scripts/context-manifest.mjs",
                     "hash": {
-                        "sha256": "c1d2e51645bf1972ac37012c972cbce2b0a2be95fcddacd2f5f52cf07db4c7f6",
+                        "sha256": "247f20ec4c061028f56789043624357f78b030a2239deb77b9060bc73d837d51",
                         "executable": false
                     },
                     "owners": [
@@ -929,7 +1139,7 @@
                     "sourcePath": ".agents/skills/_shared/scripts/context-scout-hybrid-run.mjs",
                     "targetPath": ".agents/skills/_shared/scripts/context-scout-hybrid-run.mjs",
                     "hash": {
-                        "sha256": "0cb5bc6ad143a4c4bdfbc6038ff93bbe670bcf2007eb8a74b4b72bff6b3afc43",
+                        "sha256": "a687395fd79a62110b106027613b36723e90eab37e76194939bae9d073ad46dd",
                         "executable": false
                     },
                     "owners": [
@@ -952,7 +1162,7 @@
                     "sourcePath": ".agents/skills/_shared/scripts/context-scout-report.mjs",
                     "targetPath": ".agents/skills/_shared/scripts/context-scout-report.mjs",
                     "hash": {
-                        "sha256": "5df355ebfda59618a878f05ba148f73d15067259e3f987ab1f45b0e9dc18822a",
+                        "sha256": "cabdea95a9db1c0a54a358df9276399ed9cc6e79e564cebe4eaba3debedda56d",
                         "executable": false
                     },
                     "owners": [
@@ -969,14 +1179,36 @@
                     },
                     "owners": [
                         "skill:agent-cache-clear",
+                        "skill:claude-review",
                         "skill:code-implement",
-                        "skill:dev-mate",
                         "skill:gh-issue-review",
                         "skill:gh-issue-start",
                         "skill:gh-issue-status-set",
-                        "skill:module-atlas-sync",
-                        "skill:php-structure-refactor",
                         "skill:review-quick",
+                        "skill:task-plan"
+                    ]
+                },
+                {
+                    "sourcePath": ".agents/skills/_shared/scripts/is-main-module.mjs",
+                    "targetPath": ".agents/skills/_shared/scripts/is-main-module.mjs",
+                    "hash": {
+                        "sha256": "8de2feefe06895f9f47026057de7bbcc8dd10b996f0970d1c811979cbf439723",
+                        "executable": false
+                    },
+                    "owners": [
+                        "skill:agent-cache-clear",
+                        "skill:claude-review",
+                        "skill:code-implement",
+                        "skill:code-review",
+                        "skill:commit-message-write",
+                        "skill:context-refresh",
+                        "skill:gh-issue-review",
+                        "skill:gh-issue-start",
+                        "skill:gh-issue-status-set",
+                        "skill:git-commit",
+                        "skill:plan-execute",
+                        "skill:qa-run",
+                        "skill:skill-review",
                         "skill:task-plan"
                     ]
                 },
@@ -984,7 +1216,7 @@
                     "sourcePath": ".agents/skills/_shared/scripts/issue-branch.mjs",
                     "targetPath": ".agents/skills/_shared/scripts/issue-branch.mjs",
                     "hash": {
-                        "sha256": "0bd0942c37b323eebec8403287fbfd35325c70e468c58d2118058d751b1d6300",
+                        "sha256": "0c04db2cbb70d90d4cbefe44cb81123687c7b7c00c37952626e75eb6a6119778",
                         "executable": false
                     },
                     "owners": [
@@ -998,12 +1230,89 @@
                     "sourcePath": ".agents/skills/_shared/scripts/model-hierarchy.mjs",
                     "targetPath": ".agents/skills/_shared/scripts/model-hierarchy.mjs",
                     "hash": {
-                        "sha256": "1aef67383e49e504ee1d84face6808ae4e034229071e805ff759e0f273fc232a",
+                        "sha256": "8eda3cf76ddadd217c78cbdafe78e195329d5fed7291d2706f53476b3dbdb1dd",
                         "executable": false
                     },
                     "owners": [
                         "skill:plan-execute",
                         "skill:task-plan"
+                    ]
+                },
+                {
+                    "sourcePath": ".agents/skills/_shared/scripts/model-leaderboard.mjs",
+                    "targetPath": ".agents/skills/_shared/scripts/model-leaderboard.mjs",
+                    "hash": {
+                        "sha256": "9fa411983f1e75d8ffbd774db6bb48bdf744a682325848d0a44b38d2d7147f0c",
+                        "executable": false
+                    },
+                    "owners": [
+                        "skill:plan-execute",
+                        "skill:task-plan"
+                    ]
+                },
+                {
+                    "sourcePath": ".agents/skills/_shared/scripts/playwright-access-prepare.sh",
+                    "targetPath": ".agents/skills/_shared/scripts/playwright-access-prepare.sh",
+                    "hash": {
+                        "sha256": "54b93594f1316a40487662ca0f7e5c466c295138d95513982fdeb7a8f2edfe9f",
+                        "executable": true
+                    },
+                    "owners": [
+                        "skill:code-implement",
+                        "skill:code-review",
+                        "skill:review-quick"
+                    ]
+                },
+                {
+                    "sourcePath": ".agents/skills/_shared/scripts/playwright-auth-bootstrap.mjs",
+                    "targetPath": ".agents/skills/_shared/scripts/playwright-auth-bootstrap.mjs",
+                    "hash": {
+                        "sha256": "5e01e7ce0d853242546a8f142579fe3748bb26623b0e18c8186dda388db71a45",
+                        "executable": false
+                    },
+                    "owners": [
+                        "skill:code-implement",
+                        "skill:code-review",
+                        "skill:review-quick"
+                    ]
+                },
+                {
+                    "sourcePath": ".agents/skills/_shared/scripts/playwright-auth-bootstrap.sh",
+                    "targetPath": ".agents/skills/_shared/scripts/playwright-auth-bootstrap.sh",
+                    "hash": {
+                        "sha256": "6834c426712f97a7a97203244a30530b7ec3ac1261791d685c96572985357eb1",
+                        "executable": true
+                    },
+                    "owners": [
+                        "skill:code-implement",
+                        "skill:code-review",
+                        "skill:review-quick"
+                    ]
+                },
+                {
+                    "sourcePath": ".agents/skills/_shared/scripts/playwright-auth-finalize.mjs",
+                    "targetPath": ".agents/skills/_shared/scripts/playwright-auth-finalize.mjs",
+                    "hash": {
+                        "sha256": "e276aa1dfce2bf3f4f34ca8f9e558e04878f6737a526570a36cae6547edbd5da",
+                        "executable": true
+                    },
+                    "owners": [
+                        "skill:code-implement",
+                        "skill:code-review",
+                        "skill:review-quick"
+                    ]
+                },
+                {
+                    "sourcePath": ".agents/skills/_shared/scripts/playwright-preflight.sh",
+                    "targetPath": ".agents/skills/_shared/scripts/playwright-preflight.sh",
+                    "hash": {
+                        "sha256": "c9a7fc255921044610a3336b2ad17216a2d660a544388321035d8ee56f1aa4df",
+                        "executable": true
+                    },
+                    "owners": [
+                        "skill:code-implement",
+                        "skill:code-review",
+                        "skill:review-quick"
                     ]
                 },
                 {
@@ -1026,6 +1335,7 @@
                         "executable": false
                     },
                     "owners": [
+                        "skill:claude-review",
                         "skill:code-implement",
                         "skill:context-refresh",
                         "skill:task-plan"
@@ -1050,11 +1360,192 @@
                     "sourcePath": ".agents/skills/_shared/scripts/targeted-check-decision.mjs",
                     "targetPath": ".agents/skills/_shared/scripts/targeted-check-decision.mjs",
                     "hash": {
-                        "sha256": "be7356c3eb9b69546356eb59a27b35b7be3bebe84119e69c4266ed80403f6e9c",
+                        "sha256": "c56e1a419e41f400186eedb831f7e1ff1aed4012cd4e6fb78b44b7e922292f9c",
                         "executable": false
                     },
                     "owners": [
                         "skill:code-implement"
+                    ]
+                },
+                {
+                    "sourcePath": ".agents/skills/_shared/scripts/targeted-check-decision.test.mjs",
+                    "targetPath": ".agents/skills/_shared/scripts/targeted-check-decision.test.mjs",
+                    "hash": {
+                        "sha256": "4792b211f427274d159fb01e183be7400797da96fbb53037f1df743f46695d55",
+                        "executable": false
+                    },
+                    "owners": [
+                        "skill:code-implement"
+                    ]
+                },
+                {
+                    "sourcePath": ".agents/skills/_shared/scripts/task-plan/atomic-file.mjs",
+                    "targetPath": ".agents/skills/_shared/scripts/task-plan/atomic-file.mjs",
+                    "hash": {
+                        "sha256": "f08a69d0f16db7c8b5d0667dcc59acd0ee3dd10b42e41b20a0b7666bb849dc08",
+                        "executable": false
+                    },
+                    "owners": [
+                        "skill:plan-execute",
+                        "skill:task-plan"
+                    ]
+                },
+                {
+                    "sourcePath": ".agents/skills/_shared/scripts/task-plan/difficulty.mjs",
+                    "targetPath": ".agents/skills/_shared/scripts/task-plan/difficulty.mjs",
+                    "hash": {
+                        "sha256": "86bd4e6a3b9e1b20e64b88892ec14002096fa91b4c1d3642a84adc0976cdf302",
+                        "executable": false
+                    },
+                    "owners": [
+                        "skill:plan-execute",
+                        "skill:task-plan"
+                    ]
+                },
+                {
+                    "sourcePath": ".agents/skills/_shared/scripts/task-plan/source.mjs",
+                    "targetPath": ".agents/skills/_shared/scripts/task-plan/source.mjs",
+                    "hash": {
+                        "sha256": "18c32fc7ed1bb21d34d1422d0f7a4bd3ecabf79cf6b64be95928eee686f0529d",
+                        "executable": false
+                    },
+                    "owners": [
+                        "skill:plan-execute",
+                        "skill:task-plan"
+                    ]
+                },
+                {
+                    "sourcePath": ".agents/skills/_shared/scripts/task-plan/store.mjs",
+                    "targetPath": ".agents/skills/_shared/scripts/task-plan/store.mjs",
+                    "hash": {
+                        "sha256": "2ac46ff141a3b6da92624d8db785f1ee5d102573d0e48b94f29280b265cf9c08",
+                        "executable": false
+                    },
+                    "owners": [
+                        "skill:plan-execute",
+                        "skill:task-plan"
+                    ]
+                },
+                {
+                    "sourcePath": ".agents/skills/_shared/scripts/task-plan/validate.mjs",
+                    "targetPath": ".agents/skills/_shared/scripts/task-plan/validate.mjs",
+                    "hash": {
+                        "sha256": "dca37a206f088d5a5b7446ceade0cc3c3b5ce94260c5a0478bdd68bdec347eea",
+                        "executable": false
+                    },
+                    "owners": [
+                        "skill:plan-execute",
+                        "skill:task-plan"
+                    ]
+                },
+                {
+                    "sourcePath": ".agents/skills/code-implement/references/state-and-report-contract.md",
+                    "targetPath": ".agents/skills/code-implement/references/state-and-report-contract.md",
+                    "hash": {
+                        "sha256": "faec2d52276b931a8a050eb9937ed293388d05bb3bdc45c02700d0d9057ba433",
+                        "executable": false
+                    },
+                    "owners": [
+                        "skill:code-implement"
+                    ]
+                },
+                {
+                    "sourcePath": ".agents/skills/code-review/references/active-plan.md",
+                    "targetPath": ".agents/skills/code-review/references/active-plan.md",
+                    "hash": {
+                        "sha256": "df6f75dc499395996a50eec752bf67f972aca9e21e33b1daa40404755e44df68",
+                        "executable": false
+                    },
+                    "owners": [
+                        "skill:code-review"
+                    ]
+                },
+                {
+                    "sourcePath": ".agents/skills/code-review/references/plan-review.md",
+                    "targetPath": ".agents/skills/code-review/references/plan-review.md",
+                    "hash": {
+                        "sha256": "ce069bf83b667a279213e59580bf4d7ebf765716cfc02f716b1f8913b269bd26",
+                        "executable": false
+                    },
+                    "owners": [
+                        "skill:code-review"
+                    ]
+                },
+                {
+                    "sourcePath": ".agents/skills/code-review/references/re-review.md",
+                    "targetPath": ".agents/skills/code-review/references/re-review.md",
+                    "hash": {
+                        "sha256": "e4e64d5e5af91def1802b56f55d1dc0378836aeab0422370218f0b3592e61d17",
+                        "executable": false
+                    },
+                    "owners": [
+                        "skill:code-review"
+                    ]
+                },
+                {
+                    "sourcePath": ".agents/skills/code-review/references/review-checklists.md",
+                    "targetPath": ".agents/skills/code-review/references/review-checklists.md",
+                    "hash": {
+                        "sha256": "5a5d3686ecdf90174561c2084c0b35cb8d039be135d5f62f234bc6c9d0bbd7d3",
+                        "executable": false
+                    },
+                    "owners": [
+                        "skill:code-review"
+                    ]
+                },
+                {
+                    "sourcePath": ".agents/skills/code-review/SKILL.md",
+                    "targetPath": ".agents/skills/code-review/SKILL.md",
+                    "hash": {
+                        "sha256": "c266cf7783339b5bb52219534f12c497c74ebaffc4e86a069887f23121b3139a",
+                        "executable": false
+                    },
+                    "owners": [
+                        "skill:claude-review"
+                    ]
+                },
+                {
+                    "sourcePath": ".agents/skills/skill-review/references/catalog-checklist.md",
+                    "targetPath": ".agents/skills/skill-review/references/catalog-checklist.md",
+                    "hash": {
+                        "sha256": "9a83e7d40f0984e59162e6be4ce8512661df7de3c46ba2918bde02f7133fa0a4",
+                        "executable": false
+                    },
+                    "owners": [
+                        "skill:skill-review"
+                    ]
+                },
+                {
+                    "sourcePath": ".agents/skills/skill-review/references/conformance-checklist.md",
+                    "targetPath": ".agents/skills/skill-review/references/conformance-checklist.md",
+                    "hash": {
+                        "sha256": "73fdc8ef2e766533b7aeef9d55eb6628ca6dd9605321f31485b7e5ca42fdd4ea",
+                        "executable": false
+                    },
+                    "owners": [
+                        "skill:skill-review"
+                    ]
+                },
+                {
+                    "sourcePath": ".agents/skills/skill-review/references/standard-gap.md",
+                    "targetPath": ".agents/skills/skill-review/references/standard-gap.md",
+                    "hash": {
+                        "sha256": "34bd5834743bca4d14476c97b77d3ea2d21594020a1eec3cbc8814fcdaa60aa9",
+                        "executable": false
+                    },
+                    "owners": [
+                        "skill:skill-review"
+                    ]
+                },
+                {
+                    "sourcePath": ".agents/skills/skill-review/scripts/inventory.mjs",
+                    "targetPath": ".agents/skills/skill-review/scripts/inventory.mjs",
+                    "hash": {
+                        "sha256": "fe730ae3b6f841f246fc4b9ff14fcc385e341d1ca9dd54a7386db52d7cebcc4d",
+                        "executable": false
+                    },
+                    "owners": [
+                        "skill:skill-review"
                     ]
                 }
             ],
@@ -1062,9 +1553,9 @@
                 "requestedRef": null,
                 "defaultBranch": "master",
                 "resolvedRef": "master",
-                "resolvedCommit": "8ee82d3af6b9170a6b2b8ed2e75c5d457c3773ba",
+                "resolvedCommit": "a54541e63daeccf603f4a83819d9979b7d1df21e",
                 "subpath": null,
-                "resolvedAt": "2026-09-17T11:02:30.294Z"
+                "resolvedAt": "2026-10-23T18:17:27.306Z"
             }
         }
     }
