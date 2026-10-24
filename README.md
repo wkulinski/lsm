@@ -1,271 +1,178 @@
-# `LLM Skills Manager - LSM`
+# LSM — LLM Skills Manager
 
-LSM dla Skill'i LLM to jak NPM dla pakietów node. Zarządzaj skillami LLM na podstawie manifestu projektu.
+Declare the AI agent skills your projects use, pin them in a lockfile, and send
+your improvements back to the repository they came from.
 
-Narzędzie potrafi:
-- synchronizować skille z zadeklarowanych źródeł,
-- instalować wybrane lub wszystkie skille dla wskazanych agentów,
-- synchronizować współdzielone pliki zadeklarowane w `shared_files`,
-- synchronizować rekurencyjny katalog pluginów OpenCode,
-- usuwać skille, które zniknęły z konfiguracji albo upstreamu,
-- publikować lokalne zmiany z powrotem do repozytorium źródłowego.
+LSM is a command-line tool for people who keep agent skills (`SKILL.md`
+instructions, OpenCode subagents and plugins) in Git repositories and use them
+in more than one project or with more than one AI agent. It is not a package
+registry: a "source" is simply a GitHub repository, or a directory in one.
 
-## Instalacja
+## Why use it
 
-Instalacja CLI globalnie:
+Copying skills between projects by hand drifts quickly: nobody knows which
+version is installed, local tweaks get overwritten or lost, and improvements
+never make it back.
+
+- **Declarative.** `skills.json` lists the sources, the skills you want and the
+  agents that should receive them.
+- **Reproducible.** `skills.lock.json` records the exact commits and content
+  hashes. `lsm sync` recreates that state on any machine, and updates only
+  happen when you ask for them (`lsm sync --update`).
+- **Safe by default.** LSM notices local edits to installed files and stops
+  instead of overwriting them. Without `--force`, it deletes only files it
+  installed.
+- **Two-way.** `lsm publish` turns your local improvements into a branch and
+  pull request on the source repository.
+
+**On your own:** one manifest keeps the same skills in all your projects and
+for all the agents you use (Codex, Claude Code, Cursor, OpenCode and
+[many more](docs/configuration.md#agents)).
+
+**In a team:** commit the manifest and the lock. Everyone gets the same
+instructions, updates are deliberate and reviewable like any dependency bump,
+and fixes flow back to the shared source.
+
+## Quick start
+
+You need [Node.js](https://nodejs.org/) 20 or newer and `git`.
 
 ```bash
 npm install --global @wkulinski/lsm
+lsm --version
 ```
 
-Po instalacji dostępna jest komenda `lsm`.
+Try it in an empty directory. The demo installs one harmless skill that only
+prints a greeting:
 
-## Konfiguracja
+```bash
+mkdir lsm-demo && cd lsm-demo
 
-Domyślnie `lsm` pracuje na plikach:
-- `skills.json`
-- `skills.lock.json`
-
-Jeżeli pliki nie istnieją, narzędzie utworzy ich szablony przy pierwszym uruchomieniu.
-
-### `skills.json` i `skills.lock.json`
-
-- `skills.json` opisuje oczekiwany stan: z jakich źródeł chcesz pobierać skille i dla jakich agentów.
-- `skills.lock.json` zapisuje ostatni poprawnie zsynchronizowany stan źródeł, w tym dokładne commity i hashe treści.
-- `sync` działa w trybie locked: używa commitów z `skills.lock.json` i nie aktualizuje locka.
-- `sync --update` rozwiązuje źródła ponownie, pobiera aktualny upstream i aktualizuje lock po udanej synchronizacji.
-- `publish` korzysta z `skills.lock.json`, żeby wiedzieć, względem jakiego stanu upstream przygotować publikację zmian.
-
-Przy pierwszym uruchomieniu oraz po zmianie `skills.json` użyj `sync --update`.
-
-Przykładowy `skills.json`:
-
-```json
+cat > skills.json <<'EOF'
 {
-  "schemaVersion": 2,
-  "agents": ["codex"],
-  "sources": [
-    {
-      "source": "https://github.com/example/llm-skills",
-      "skills": true
-    }
-  ]
+    "schemaVersion": 2,
+    "agents": ["codex"],
+    "sources": [
+        {
+            "source": "https://github.com/wkulinski/lsm/tree/master/examples/skill-source",
+            "skills": ["hello-lsm"]
+        }
+    ]
 }
+EOF
+
+lsm sync --update
 ```
 
-### Subagenty OpenCode
+The first run (and every run after you edit `skills.json`) needs `--update`: it
+resolves the source and writes the lock. The end of the output looks like this:
 
-Subagenty są osobnym typem artefaktu synchronizowanym przez `sync`. W pierwszej
-wersji jedynym obsługiwanym targetem jest `opencode`, a pliki trafiają do
-`.opencode/agent/` albo `.opencode/agents/`.
+```text
+== Install summary ==
+OK  : 1/1
+FAIL: 0/1
 
-Przykładowy manifest mieszany:
-
-```json
-{
-  "schemaVersion": 2,
-  "agents": ["codex"],
-  "subagents": ["opencode"],
-  "sources": [
-    {
-      "source": "https://github.com/example/llm-config",
-      "skills": ["code-implement"],
-      "subagents": ["reviewer", "researcher"]
-    }
-  ]
-}
+Lock updated: skills.lock.json
 ```
 
-`agents` wybiera integracje dla skilli, natomiast `subagents` w manifeście
-włącza synchronizację plików OpenCode. Na poziomie źródła zarówno `skills`, jak
-i `subagents` mają jawną selekcję: brak pola, `false` lub `[]` oznacza brak
-elementów, `true` oznacza wszystkie, a niepusta tablica jest selekcją po nazwie.
-Manifest tylko z subagentami może użyć `"agents": []`; nie wymaga fazy skilli.
+What you now have:
 
-`skills.json` musi mieć `"schemaVersion": 2`. Istniejące manifesty należy
-zaktualizować ręcznie: jeśli brak pola wcześniej oznaczał wszystkie elementy,
-dodaj jawne `true`.
-
-Źródło może zawierać `.opencode/agent/`, `.opencode/agents/` albo oba katalogi.
-Projekt używa istniejącego wariantu, domyślnie `.opencode/agents/`, gdy nie ma
-jeszcze żadnego z nich. W trybie `sync --update` wynik autodetekcji jest
-zapisywany jako `targetPath` w locku. Zwykły `sync` używa tej ścieżki z locka i
-nie przenosi pliku po samej zmianie lokalnego układu katalogów.
-
-Opcjonalny sidecar agenta ma nazwę `<agent>.md.lsm.yaml` i ścisły schemat:
-
-```yaml
-schema_version: 1
-shared_files:
-  - .agents/skills/_shared/references/runtime-quality-procedures.md
+```text
+lsm-demo/
+├── skills.json
+├── skills.lock.json                    # exact commit and content hashes
+└── .agents/skills/
+    ├── hello-lsm/SKILL.md              # the installed skill
+    └── _shared/hello-lsm.txt           # a file the skill declares as shared
 ```
 
-Sidecar deklaruje wyłącznie pliki `.agents/skills/_shared/`; nie jest kopiowany
-do projektu. Brak sidecara oznacza brak dodatkowych plików współdzielonych.
-Synchronizacja zapisuje lock v6 z `subagentEntries`, `sharedEntries`, hashami,
-bitem wykonywalności i ownershipem. Lock v5 pozostaje obsługiwany dla
-manifestów bez subagentów; manifest z subagentami wymaga `sync --update`, które
-zapisuje v6 dopiero po udanym przebiegu.
-
-`publish` obsługuje wyłącznie skille. Manifest mieszany publikuje tylko skille,
-a manifest zawierający wyłącznie subagenty kończy się komunikatem:
-`Publish currently supports skills only; subagents are sync-only.`
-
-### Pluginy OpenCode
-
-Pluginy są synchronizowane razem z subagentami, gdy manifest zawiera top-level
-`"subagents": ["opencode"]`. Nie mają osobnej selekcji: dla każdego źródła
-lsm synchronizuje wszystkie zwykłe pliki z `.opencode/plugins/` rekurencyjnie,
-niezależnie od rozszerzenia, do identycznej ścieżki `.opencode/plugins/` w
-projekcie. Brak katalogu pluginów oznacza brak zmian. Symlinki i ścieżki
-wychodzące poza katalog źródłowy są odrzucane.
-
-Selekcja source-level `subagents` dotyczy wyłącznie agentów; nie ogranicza
-pluginów. `sync --update` zapisuje ich `sourcePath`, `targetPath`, hash,
-wykonywalność i commit w opcjonalnych `pluginEntries` locka v6. Zwykły `sync`
-korzysta z tego baseline'u i nie przyjmuje zmian upstreamu bez `--update`.
-Nieaktualne, wcześniej zarządzane pluginy są usuwane wyłącznie podczas udanego
-update; pliki unmanaged pozostają nietknięte.
-
-Pluginy są sync-only. `publish` ich nie publikuje, nie instaluje zależności npm
-i nie zmienia formatu pluginów OpenCode. Output `sync` pokazuje ich liczbę w
-osobnym bloku `Plugins summary` obok podsumowania subagentów.
-
-## Komendy
-
-### `sync`
-
-Synchronizuje lokalne skille, subagenty OpenCode i pluginy OpenCode z manifestem
-oraz źródłami upstream.
-
-Opcje:
-- `--manifest <path>`: ścieżka do alternatywnego pliku manifestu
-- `--update`: pobierz aktualny upstream i zaktualizuj `skills.lock.json`
-- `--force`: kontynuuj mimo wykrytych lokalnych konfliktów zmian
-
-Przykłady:
+Run it again without `--update` to replay the lock. It reinstalls exactly the
+recorded commit and leaves the lock alone:
 
 ```bash
-node bin/lsm sync
+lsm sync
+# …
+# Lock unchanged (locked sync used the existing state).
 ```
 
-```bash
-node bin/lsm sync --update
-```
+Later, `lsm sync --update` pulls the current upstream and refreshes the lock.
+When you are done, delete the `lsm-demo` directory; nothing outside it was
+touched.
 
-```bash
-node bin/lsm sync --manifest ./config/skills.json
-```
+Next: [use it in your own project](docs/usage.md#set-up-for-yourself).
 
-```bash
-node bin/lsm sync --force
-```
+## What LSM manages
 
-Zwykłe `sync` kończy się błędem, gdy lock jest pusty, niezgodny z manifestem
-albo nie zawiera wymaganego commita. `--force` nie omija tej walidacji.
+| Artifact | Synced from sources | Published back |
+|---|---|---|
+| Skills (`SKILL.md` directories) | yes | yes |
+| Shared files a skill declares (`shared_files`) | yes | yes, with the skill |
+| OpenCode subagents | yes | no (sync-only) |
+| OpenCode plugins | yes | no (sync-only) |
 
-Output `sync` pokazuje osobny blok dla każdego źródła skilli i subagentów.
-Blok subagentów zawiera tryb (`all`, `explicit` albo `none`) i liczbę wybranych
-plików; dla `none` pokazuje także `Action: skipped`. Po zakończeniu synchronizacji
-podsumowanie subagentów zawiera liczbę źródeł, wybranych, zainstalowanych i
-usuniętych plików oraz plików współdzielonych. Jeśli wykryto pluginy, osobny blok
-pokazuje liczbę wykrytych, zainstalowanych i usuniętych pluginów.
+Sources must be on GitHub. See the [configuration reference](docs/configuration.md)
+for the manifest, the lock, source syntax and the full list of supported
+agents and their directories.
 
-### `publish`
+## Safety
 
-Publikuje lokalne zmiany do repozytorium źródłowego na podstawie danych zapisanych w locku.
-Jeżeli plik usunięto z istniejącego zarządzanego skilla lokalnie, `publish` planuje
-jego usunięcie w źródle na podstawie listy plików z locka. Takie usunięcia wymagają
-`--confirm-deletes`; pliki spoza baseline locka nie są usuwane automatycznie.
+LSM writes and deletes files in your project and pulls instructions from
+other repositories, so know what it does:
 
-Opcje:
-- `--manifest <path>`: ścieżka do alternatywnego pliku manifestu
-- `--source <source>`: wybór konkretnego źródła z manifestu
-- `--new-skill <name>`: oznaczenie skilla jako nowy, można podać wiele razy
-- `--remove-skill <name>`: oznaczenie skilla do usunięcia, można podać wiele razy
-- `--dry-run`: przygotuj plan zmian bez commita i push
-- `--confirm-deletes`: potwierdź planowane usunięcia
-- `--message <message>`: własna treść commita
-- `--branch <name>`: własna nazwa brancha
-- `--no-pr`: nie twórz pull requesta
-- `--title <title>`: własny tytuł PR
-- `--body <body>`: własny opis PR
+- **Trust your sources.** Skills tell your agents what to do and plugins are
+  code. The lock makes an install *reproducible*, not *safe*: it does not
+  check whether the content is harmless. Review what you install and every
+  update.
+- **Local edits are protected.** If an installed file differs from the lock,
+  LSM lists the files and stops (non-interactive runs fail). `--force` is the
+  explicit way to overwrite, and it cannot be undone.
+- **LSM deletes only what it installed.** Files it did not install are left
+  alone; an unmanaged directory that is in the way is reported as a conflict.
+  Only `--force` replaces it, and its contents are then lost.
+- **Publishing is reviewable.** `lsm publish --dry-run` shows the plan without
+  pushing, deletions need `--confirm-deletes`, and changes go to a new branch,
+  normally with a pull request.
+- **Failures are contained.** If installing a skill fails, its previous version
+  stays in place and the lock is not updated. There is no rollback of an entire
+  multi-skill run, and recovery from a crash mid-operation is not covered.
 
-Przykłady:
+Details and recovery steps: [Usage](docs/usage.md) and
+[Troubleshooting](docs/troubleshooting.md).
 
-```bash
-node bin/lsm publish --dry-run
-```
+## Documentation
 
-```bash
-node bin/lsm publish \
-  --source https://github.com/example/llm-skills \
-  --new-skill my-skill \
-  --message "chore(skills): publish my-skill"
-```
+| Page | Read it to |
+|---|---|
+| [Usage guide](docs/usage.md) | Set up alone or as a team, update, handle local edits, publish. |
+| [Configuration reference](docs/configuration.md) | Look up manifest fields, sources, agents, lock format, writing a skill. |
+| [Troubleshooting](docs/troubleshooting.md) | Find an error message and the safe next step. |
+| [Example source](examples/README.md) | See the demo skill used above. |
+| [Contributing](CONTRIBUTING.md) | Report a bug, propose a change, run the checks. |
+| [Security policy](SECURITY.md) | Report a vulnerability privately. |
+| [Maintainer docs](docs/README.md) | Compatibility policy, releasing, architecture. |
 
-```bash
-node bin/lsm publish \
-  --source https://github.com/example/llm-skills \
-  --remove-skill old-skill \
-  --confirm-deletes \
-  --no-pr
-```
+## Library
 
-### Kolorowanie outputu
-
-W interaktywnym terminalu komunikaty CLI używają kolorów i wyróżnień sekcji.
-Kolory są automatycznie wyłączane dla potoków i CI. Można je wyłączyć jawnie
-przez `NO_COLOR` albo wymusić przez `FORCE_COLOR`:
-
-```bash
-NO_COLOR=1 node bin/lsm sync
-FORCE_COLOR=1 node bin/lsm sync
-```
-
-## Biblioteka
-
-Pakiet udostępnia też API programistyczne. Główny punkt wejścia to `createManager()`,
-który pozwala uruchomić `sync` i `publish` programowo, bez bezpośredniego użycia CLI.
+Everything the CLI does is also available in code:
 
 ```ts
 import { createManager } from '@wkulinski/lsm';
 
 const manager = createManager({ cwd: process.cwd() });
-await manager.runSync();
+const result = await manager.runSync({ update: true });
 ```
 
-## Wydanie
+## Status and compatibility
 
-Publikacja kolejnych wersji odbywa się przez GitHub Release. Trusted Publisher
-na npm musi wskazywać workflow `.github/workflows/publish.yml`.
+LSM is on a `0.x` version: the commands and file formats described here are
+what the tests cover, but they may still change between minor versions.
+Breaking changes and their manual migration steps are listed in the release
+notes and in [Maintaining](docs/maintaining.md#breaking-changes-before-10).
 
-```bash
-npm version patch
-git push --follow-tags
-gh release create v0.1.1 --generate-notes
-```
+The CI workflow installs the packaged tarball and runs an end-to-end check on
+Ubuntu with Node 20.0.0, 22 and 24. Other operating systems are not verified;
+Windows in particular is untested.
 
-Workflow uruchomi testy, coverage, typecheck, lint, build i opublikuje dokładny
-tag release na npm.
+## License
 
-## Pomoc
-
-Wersja CLI:
-
-```bash
-node bin/lsm --version
-```
-
-Lista dostępnych komend:
-
-```bash
-node bin/lsm --help
-```
-
-Pomoc dla konkretnej komendy:
-
-```bash
-node bin/lsm sync --help
-node bin/lsm publish --help
-```
+[MIT](LICENSE)
