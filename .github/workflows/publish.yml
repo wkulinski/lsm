@@ -6,18 +6,20 @@ on:
 
 permissions:
   contents: read
-  id-token: write
 
 concurrency:
   group: publish-${{ github.event.release.tag_name }}
   cancel-in-progress: false
 
 jobs:
-  publish:
+  verify:
     if: ${{ !github.event.release.prerelease }}
     runs-on: ubuntu-latest
     env:
       RELEASE_TAG: ${{ github.event.release.tag_name }}
+    outputs:
+      file: ${{ steps.pack.outputs.file }}
+      sha256: ${{ steps.pack.outputs.sha256 }}
 
     steps:
       - name: Checkout release tag
@@ -29,7 +31,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24
-          registry-url: https://registry.npmjs.org
           package-manager-cache: false
 
       - name: Verify package version matches release tag
@@ -66,5 +67,102 @@ jobs:
       - name: Audit production dependencies
         run: npm audit --omit=dev
 
+      - name: Pack package
+        id: pack
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/package"
+          file="$(npm pack --json --pack-destination "$RUNNER_TEMP/package" | node -p "JSON.parse(require('fs').readFileSync(0, 'utf8'))[0].filename")"
+          echo "file=$file" >> "$GITHUB_OUTPUT"
+          echo "sha256=$(sha256sum "$RUNNER_TEMP/package/$file" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: package
+          path: ${{ runner.temp }}/package/*.tgz
+          if-no-files-found: error
+          retention-days: 7
+
+  package:
+    if: ${{ !github.event.release.prerelease }}
+    needs: verify
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ['20.0.0', '22', '24']
+
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Set up Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Download package
+        uses: actions/download-artifact@v4
+        with:
+          name: package
+          path: ${{ runner.temp }}/package
+
+      - name: Verify package checksum
+        shell: bash
+        env:
+          PACKAGE_FILE: ${{ needs.verify.outputs.file }}
+          EXPECTED_SHA256: ${{ needs.verify.outputs.sha256 }}
+        run: |
+          actual="$(sha256sum "$RUNNER_TEMP/package/$PACKAGE_FILE" | cut -d' ' -f1)"
+          if [[ "$actual" != "$EXPECTED_SHA256" ]]; then
+            echo "Checksum mismatch for $PACKAGE_FILE: expected $EXPECTED_SHA256, got $actual."
+            exit 1
+          fi
+
+      - name: Check installed package
+        env:
+          PACKAGE_FILE: ${{ needs.verify.outputs.file }}
+        run: node scripts/smoke-package.mjs "$RUNNER_TEMP/package/$PACKAGE_FILE"
+
+  publish:
+    if: ${{ !github.event.release.prerelease }}
+    needs: [verify, package]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+
+      - name: Download package
+        uses: actions/download-artifact@v4
+        with:
+          name: package
+          path: ${{ runner.temp }}/package
+
+      - name: Verify package checksum
+        shell: bash
+        env:
+          PACKAGE_FILE: ${{ needs.verify.outputs.file }}
+          EXPECTED_SHA256: ${{ needs.verify.outputs.sha256 }}
+        run: |
+          actual="$(sha256sum "$RUNNER_TEMP/package/$PACKAGE_FILE" | cut -d' ' -f1)"
+          if [[ "$actual" != "$EXPECTED_SHA256" ]]; then
+            echo "Checksum mismatch for $PACKAGE_FILE: expected $EXPECTED_SHA256, got $actual."
+            exit 1
+          fi
+
       - name: Publish to npm
-        run: npm publish
+        env:
+          PACKAGE_FILE: ${{ needs.verify.outputs.file }}
+        run: npm publish "$RUNNER_TEMP/package/$PACKAGE_FILE"

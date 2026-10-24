@@ -10,7 +10,7 @@ changes scoped to the package, its CLI, tests, and project documentation.
 - `src/core/`: manager, manifest, source, sync, publish, filesystem, and Git
   modules.
 - `tests/`: Vitest unit and integration tests.
-- `bin/lsm`: repository CLI wrapper.
+- `bin/lsm.mjs`: repository CLI wrapper.
 - `.agents/skills/`: local agent skills; most installed skills are ignored by
   Git and should not be treated as package source.
 - `README.md`: package documentation and user-facing configuration reference.
@@ -42,7 +42,7 @@ npm pack --dry-run
 The CLI can be run from the repository with:
 
 ```bash
-node bin/lsm --help
+node bin/lsm.mjs --help
 ```
 
 ## Coding Style

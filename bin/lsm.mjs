@@ -1,13 +1,12 @@
 #!/usr/bin/env node
 
-(async () => {
-    try {
-        const { main } = await import('../dist/bin.mjs');
-        const code = await main(process.argv.slice(2));
+import('../dist/bin.mjs')
+    .then(({ main }) => main(process.argv.slice(2)))
+    .then((code) => {
         process.exitCode = typeof code === 'number' ? code : 0;
-    } catch (error) {
+    })
+    .catch((error) => {
         const message = error instanceof Error ? error.message : String(error);
         process.stderr.write(`Fatal: ${message}\n`);
         process.exitCode = 1;
-    }
-})();
+    });
