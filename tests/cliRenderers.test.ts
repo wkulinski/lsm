@@ -304,7 +304,7 @@ describe('sync renderer', () => {
         const output = captureOutput();
         const installs = [
             { source: 'owner/ok', ok: true },
-            { source: 'owner/fail', ok: false, status: 2, cmd: ['git', 'clone'] },
+            { source: 'owner/fail', ok: false, status: 2, cmd: ['git', 'clone'], error: 'EACCES: permission denied', details: 'mkdir failed' },
         ];
 
         const results: SyncCommandResult[] = [
@@ -422,5 +422,36 @@ describe('sync renderer', () => {
 
         expect(output.stdout).toContain('== Subagents summary ==');
         expect(output.stdout).not.toContain('== Plugins summary ==');
+    });
+});
+
+describe('user-facing messages', () => {
+    test('install failures show the underlying cause', () => {
+        const output = captureOutput();
+
+        renderSyncResult({
+            status: 'add-failed',
+            exitCode: 1,
+            header,
+            plan,
+            preflight,
+            installs: [{ source: 'owner/fail', ok: false, status: 1, cmd: ['internal-install'], error: 'EACCES: permission denied', details: 'mkdir failed' }],
+        });
+
+        expect(output.stdout).toContain('error: EACCES: permission denied');
+        expect(output.stdout).toContain('mkdir failed');
+    });
+
+    test.each([
+        ['sync', renderSyncResult],
+        ['publish', renderPublishResult],
+    ] as const)('%s reports created templates in English', (_name, render) => {
+        const output = captureOutput();
+
+        render({ status: 'templates-created', exitCode: 1, root: '/tmp', createdTemplates: ['skills.json'] });
+
+        expect(output.stdout).toContain('Required files are missing. Created templates:');
+        expect(output.stdout).toContain('Fill in skills.json and run the command again.');
+        expect(output.stdout).not.toMatch(/[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/);
     });
 });

@@ -108,11 +108,11 @@ function printSourceBlock(source: string, mode: string, artifactLabel: string, c
 }
 
 function printCreatedTemplates(result: ManagerTemplatesCreatedResult): void {
-    writeSection(process.stdout, 'Brak wymaganych plików. Utworzono szablony:', 'warning');
+    writeSection(process.stdout, 'Required files are missing. Created templates:', 'warning');
     result.createdTemplates.forEach((filePath) => {
         writeBullet(process.stdout, filePath);
     });
-    process.stdout.write(`${colorize('Uzupełnij skills.json i uruchom ponownie.', 'muted')}\n`);
+    process.stdout.write(`${colorize('Fill in skills.json and run the command again.', 'muted')}\n`);
 }
 
 function printSyncPlan(plan: SyncPlan): void {
@@ -248,6 +248,12 @@ function printInstallSummary(installs: SyncInstallResult[]): void {
         writeBullet(process.stdout, `${item.source} exit=${String(item.status ?? 1)}`, 'error');
         if (item.cmd?.length) {
             process.stdout.write(`    ${colorize(`cmd: ${item.cmd.join(' ')}`, 'muted')}\n`);
+        }
+        if (item.error) {
+            process.stdout.write(`    ${colorize(`error: ${item.error}`, 'error')}\n`);
+        }
+        if (item.details) {
+            process.stdout.write(`    ${colorize(formatUnknown(item.details), 'muted')}\n`);
         }
     });
 }

@@ -42,6 +42,8 @@ export interface SyncInstallResult {
     skipped?: boolean;
     status?: number;
     cmd?: string[];
+    error?: string;
+    details?: unknown;
 }
 
 export interface SharedSyncError {
