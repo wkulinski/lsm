@@ -106,7 +106,7 @@ export default class SkillEntryInstaller {
                         Helpers.die(`Skill destination contains a symbolic link or escapes agent skills directory: ${destinationPath}`);
                     }
 
-                    SkillInstaller.writeDirectory(destinationPath, directoryEntry.files);
+                    SkillInstaller.writeDirectory(destinationPath, directoryEntry.files, agentSkillDir);
                 });
             });
 

@@ -1,6 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+/** Prefix of temporary directories used while replacing a skill; never a skill itself. */
+export const SWAP_DIRECTORY_PREFIX = '.lsm-swap-';
+
 export function normalizePosixPath(value: unknown): string {
     return typeof value === 'string'
         ? value.replace(/\\/g, '/')
