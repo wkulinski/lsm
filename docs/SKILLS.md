@@ -4,7 +4,85 @@ Project-local skills are installed below `.agents/skills/`. The active skill
 definitions are maintained by the configured skills source and should be
 updated through the skills synchronization workflow.
 
+Routing głównego workflow opisuje
+[`skill-routing-policy.md`](../.agents/skills/_shared/references/skill-routing-policy.md).
+Tabela triggerów pozwala wybrać skill po intencji; pełna lista alfabetyczna
+znajduje się na końcu dokumentu.
+
+## Tabela triggerów
+
+### Planowanie
+
+| Intencja | Skill | Następny krok |
+| --- | --- | --- |
+| Przygotuj plan wykonawczy z issue, pliku albo opisu | `$task-plan` | krytyczna weryfikacja, potem walidacja planu |
+| Nowe wymaganie, korekta zakresu albo prośba o zapis w trakcie aktywnej pracy nad planem | `$task-plan` | zmiana planu i jego review, bez zmian w repozytorium |
+| Wykonaj albo wznow istniejący plan lub WP | `$plan-execute` | wybrany WP trafia do `$code-implement` |
+
+### Implementacja
+
+| Intencja | Skill | Następny krok |
+| --- | --- | --- |
+| Zaimplementuj zmianę, bugfix albo refaktor bez istniejącego planu | `$code-implement` | implementacja, dowody i lekka weryfikacja |
+
+### Review kodu i planu
+
+| Intencja | Skill | Następny krok |
+| --- | --- | --- |
+| Wykonaj review kodu lub aktualnych zmian albo odrębną fazę read-only review planu | `$code-review` | findings-first, coverage i werdykt przed merge lub wdrożeniem planu |
+| Szybko sprawdź przyrost w trakcie realizacji zadania albo jawnie wybierz quick-check | `$review-quick` | raport findings-first bez formalnego werdyktu |
+| Zleć z OpenCode odczytowy review kodu Claude Code (Opus) przez Paseo | `$claude-review` | raport recenzenta oceniany bramką `$code-review` |
+
+### Review instrukcji
+
+| Intencja | Skill | Następny krok |
+| --- | --- | --- |
+| Zaudytuj skill, reguły lokalne, agenta albo cały katalog względem standardu autorskiego | `$skill-review` | findings albo standard-gap z evidence, bez edycji plików |
+| Uporządkuj lokalne reguły i usuń duplikaty względem baseline `_shared` | `$rules-sync` | zsynchronizowane zasady z jawnie zaraportowanymi nadpisaniami |
+
+### QA i commit
+
+| Intencja | Skill | Następny krok |
+| --- | --- | --- |
+| Uruchom deterministyczne QA z macierzy komend: linty, testy i review | `$qa-run` | raport QA i sesja QA |
+| Zacommituj zmiany zgodnie z workflow repo | `$git-commit` | pełna procedura testów, walidacji i commit |
+| Przygotuj samą treść commit message | `$commit-message-write` | zapis do `COMMIT_MESSAGE_DIR/commit-message.txt` |
+
+### Dokumentacja
+
+| Intencja | Skill | Następny krok |
+| --- | --- | --- |
+| Uporządkuj dokumentację po większych zmianach | `$docs-sync` | scalone duplikaty i spójne odwołania |
+| Wypisz otwarte zadania TODO z dokumentacji | `$docs-todo` | lista zadań bez implementacji |
+| Odśwież indeks skilli: listę i tabelę triggerów | `$skills-index-refresh` | `SKILLS_INDEX_DOC` zgodny z katalogiem |
+
+### Obsługa issue
+
+| Intencja | Skill | Następny krok |
+| --- | --- | --- |
+| Rozpocznij pracę nad issue | `$gh-issue-start` | branch, status In progress i assignee |
+| Odeślij issue do review | `$gh-issue-review` | push, PR, status In review i opcjonalny reviewer |
+| Ustaw status issue w GitHub Projects v2 | `$gh-issue-status-set` | zaktualizowany status na podstawie brancha albo numeru issue |
+
+### Diagnostyka i utrzymanie
+
+| Intencja | Skill | Następny krok |
+| --- | --- | --- |
+| Załaduj albo odśwież kontekst projektu | `$context-refresh` | manifest kontekstu i stan repo |
+| Przekaż kontekst kolejnemu agentowi | `$handoff-refresh` | zrzut stanu dla nowej sesji |
+| Wyczyść lokalny cache agenta | `$agent-cache-clear` | usunięcie stanu z `CACHE_PATH` |
+
+### Zarządzanie skillami i wydaniem
+
+| Intencja | Skill | Następny krok |
+| --- | --- | --- |
+| Synchronizuj, publikuj albo zmień wybór skilli z repozytorium źródłowego | `$llm-skills-manager` | sync/publish przez CLI lub API z kontrolą planu |
+| Przygotuj i wydaj nową wersję pakietu npm | `$npm-release-manager` | GitHub Release i Trusted Publishing |
+
+## Lista skilli
+
 - `$agent-cache-clear`
+- `$claude-review`
 - `$code-implement`
 - `$code-review`
 - `$commit-message-write`
@@ -22,5 +100,6 @@ updated through the skills synchronization workflow.
 - `$qa-run`
 - `$review-quick`
 - `$rules-sync`
+- `$skill-review`
 - `$skills-index-refresh`
 - `$task-plan`
