@@ -2,9 +2,23 @@
     "name": "@wkulinski/lsm",
     "type": "module",
     "version": "0.5.2",
-    "description": "Declarative manager for synchronizing and publishing LLM skills across AI agents.",
+    "description": "Declarative manager for AI agent skills: sync them from Git sources, pin them in a lockfile and publish improvements back.",
     "author": "Wojciech Kuliński",
     "license": "MIT",
+    "keywords": [
+        "llm",
+        "ai-agents",
+        "agent-skills",
+        "skills",
+        "skill-manager",
+        "lockfile",
+        "cli",
+        "claude-code",
+        "codex",
+        "opencode",
+        "cursor",
+        "git"
+    ],
     "engines": {
         "node": ">=20"
     },
@@ -34,6 +48,7 @@
         "build": "tsdown",
         "dev": "tsdown --watch",
         "test": "vitest run",
+        "test:package": "node scripts/smoke-package.mjs",
         "test:coverage": "vitest run --coverage",
         "test:watch": "vitest",
         "test:typecheck": "tsc --noEmit --project tsconfig.vitest.json",
@@ -45,7 +60,10 @@
         "lint:ts:typecheck": "tsc --noEmit"
     },
     "devDependencies": {
+        "@eslint/compat": "^2.1.1",
         "@eslint/js": "^10.0.1",
+        "@eslint/json": "^2.1.1",
+        "@eslint/markdown": "^8.0.3",
         "@stylistic/eslint-plugin": "^5.10.0",
         "@types/node": "^25.0.3",
         "@typescript-eslint/eslint-plugin": "^8.57.0",
@@ -62,12 +80,11 @@
     "directories": {
         "test": "tests"
     },
-    "keywords": [],
     "dependencies": {
         "commander": "^14.0.3",
         "yaml": "^2.9.0"
     },
     "bin": {
-        "lsm": "bin/lsm"
+        "lsm": "bin/lsm.mjs"
     }
 }

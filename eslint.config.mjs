@@ -1,9 +1,14 @@
+import path from 'node:path';
+
 import { defineConfig } from 'eslint/config';
+import { includeIgnoreFile } from '@eslint/compat';
 import eslint from '@eslint/js';
 import tsParser from '@typescript-eslint/parser';
 import tsEslint from '@typescript-eslint/eslint-plugin';
 import globals from 'globals';
 import stylistic from '@stylistic/eslint-plugin';
+import json from '@eslint/json';
+import markdown from '@eslint/markdown';
 
 const tsFiles = ['**/*.{ts,tsx,mts,cts}'];
 const jsFiles = ['**/*.{js,mjs,cjs}'];
@@ -125,8 +130,9 @@ const additionalRules = {
 };
 
 export default defineConfig([
+    includeIgnoreFile(path.resolve(import.meta.dirname, '.gitignore'), 'Imported .gitignore patterns'),
     {
-        ignores: ['node_modules/**', 'dist/**', 'public/build/**', '.agents/skills/**', 'assets/vendor/**', 'vendor/**', 'webpack.config.cjs'],
+        ignores: ['node_modules/**', 'dist/**', '**/package-lock.json', 'skills.lock.json', 'public/build/**', '.agents/skills/**', 'assets/vendor/**', 'vendor/**', 'webpack.config.cjs'],
     },
     {
         ...eslint.configs.recommended,
@@ -182,5 +188,23 @@ export default defineConfig([
         rules: {
             ...additionalRules,
         }
+    },
+    {
+        files: ['**/*.json'],
+        language: 'json/json',
+        plugins: { json },
+        ...json.configs.recommended,
+    },
+    {
+        files: ['**/*.jsonc'],
+        language: 'json/jsonc',
+        plugins: { json },
+        ...json.configs.recommended,
+    },
+    {
+        files: ['**/*.md'],
+        language: 'markdown/gfm',
+        plugins: { markdown },
+        ...markdown.configs.recommended[0],
     },
 ]);
