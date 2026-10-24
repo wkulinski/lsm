@@ -1,0 +1,10 @@
+{
+    "schemaVersion": 2,
+    "agents": ["codex"],
+    "sources": [
+        {
+            "source": "https://github.com/wkulinski/lsm/tree/master/examples/skill-source",
+            "skills": ["hello-lsm"]
+        }
+    ]
+}

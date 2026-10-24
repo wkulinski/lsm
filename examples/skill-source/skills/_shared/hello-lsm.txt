@@ -1,0 +1,1 @@
+Hello from LSM! This file was installed as a shared file of the hello-lsm skill.
