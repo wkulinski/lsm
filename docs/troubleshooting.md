@@ -1,12 +1,7 @@
 # Troubleshooting
 
-Find your message, understand what it means, and take the safe next step.
 Commands are described in the [Usage guide](usage.md); formats in the
 [Configuration reference](configuration.md).
-
-**Before using `--force`:** it overwrites and deletes the conflicting local
-paths without asking. LSM cannot restore them afterwards. Only use it after you
-have read the list of conflicts and saved anything you want to keep.
 
 ## Quick index
 
@@ -58,25 +53,8 @@ Error: Standard sync cannot continue because local changes were detected in mana
 ```
 
 LSM refuses to overwrite files that differ from the lock. Nothing has been
-changed. Read the path list, then choose:
-
-| Situation | Safe next step |
-|---|---|
-| You want to keep and share the edit | `lsm publish --dry-run`, then `lsm publish`; merge the PR; `lsm sync --update` |
-| The same change is already upstream | `lsm sync --update` |
-| You want to keep the edit privately | Do not sync those paths; copy the skill under another name |
-| You do not need the edit | Save a copy if in doubt, then `lsm sync --force` |
-
-Other conflict texts:
-
-- `existing unmanaged path would be overwritten`: something LSM did not
-  install already sits where a skill should go. Move or rename it, or use
-  `--force` to replace it (its contents are lost).
-- `[delete] … (locally modified managed file)`: the run wants to remove a
-  skill you dropped from the manifest, but you edited it. Publish or copy your
-  edits first.
-- In a terminal LSM asks `Continue sync and overwrite/delete these paths?
-  [y/N]`. Answer `n` (or anything but `y`/`yes`) to stop safely.
+changed. The conflict kinds and the safe ways to resolve them are described in
+[Local edits and conflicts](usage.md#local-edits-and-conflicts).
 
 ## Skill not found
 
@@ -96,7 +74,7 @@ Nothing was changed.
   `Repository not found` or `Authentication failed`: the repository does not
   exist under that name or your Git credentials cannot read it. Check that
   `git clone <repository-url>` works in the same shell, using your credential
-  helper or token. LSM only calls Git and never handles credentials.
+  helper or token.
 - `Unsupported source: … (allowed: github)`: only GitHub sources are
   supported. See [Sources](configuration.md#sources).
 - `Commit … not found in source history.` (publish): the commit in your lock
@@ -129,9 +107,7 @@ What LSM guarantees in this case:
   the new content in a temporary directory first and swaps it in only when it
   is ready. If the swap itself fails, it moves the previous version back.
 - A skill that was not installed before leaves nothing partial behind.
-- No removals run and the lock is **not** updated (the run ends with `Lock NOT
-  updated`), so a normal retry of the same command is safe and needs no
-  `--force`.
+- No removals run and the lock is **not** updated.
 
 What it does not guarantee:
 
@@ -147,7 +123,11 @@ back by hand, then delete the temporary directory. LSM ignores directories with
 that name when it looks for skills, so a leftover is harmless, but an agent that
 scans the skills directory itself may still read a copy kept inside it.
 
-Fix the cause (free disk space, permissions), then run the same command again.
+Once the cause is fixed, retry the command. New skills installed earlier in the
+failed run are not yet recorded in the lock and may be reported as unmanaged
+paths. Review the [conflicts](usage.md#local-edits-and-conflicts) before
+confirming or using `--force`.
+
 `Aborting before removals because shared file sync failed.` and `…subagent
 sync failed.` mean the same for shared files and subagents.
 
@@ -211,7 +191,5 @@ Manifest problems stop the run before anything is changed.
 
 ## Still stuck?
 
-Run the failing command again and keep the full output. Open an issue with the
-LSM version (`lsm --version`), your Node version, the manifest with private
-values removed, and the output. Do not paste tokens or private repository
-contents.
+[Report a bug](../CONTRIBUTING.md#reporting-a-bug) with the full output of the
+failing command.

@@ -4,82 +4,82 @@ Project-local skills are installed below `.agents/skills/`. The active skill
 definitions are maintained by the configured skills source and should be
 updated through the skills synchronization workflow.
 
-Routing głównego workflow opisuje
+The main workflow routing is defined in
 [`skill-routing-policy.md`](../.agents/skills/_shared/references/skill-routing-policy.md).
-Tabela triggerów pozwala wybrać skill po intencji; pełna lista alfabetyczna
-znajduje się na końcu dokumentu.
+The trigger table selects a skill by intent; the alphabetical list is at the
+end.
 
-## Tabela triggerów
+## Trigger table
 
-### Planowanie
+### Planning
 
-| Intencja | Skill | Następny krok |
+| Intent | Skill | Next step |
 | --- | --- | --- |
-| Przygotuj plan wykonawczy z issue, pliku albo opisu | `$task-plan` | krytyczna weryfikacja, potem walidacja planu |
-| Nowe wymaganie, korekta zakresu albo prośba o zapis w trakcie aktywnej pracy nad planem | `$task-plan` | zmiana planu i jego review, bez zmian w repozytorium |
-| Wykonaj albo wznow istniejący plan lub WP | `$plan-execute` | wybrany WP trafia do `$code-implement` |
+| Prepare an execution plan from an issue, a file or a description | `$task-plan` | critical verification, then plan validation |
+| New requirement, scope correction or a request to record something during active plan work | `$task-plan` | plan change and its review, no repository changes |
+| Execute or resume an existing plan or WP | `$plan-execute` | the selected WP goes to `$code-implement` |
 
-### Implementacja
+### Implementation
 
-| Intencja | Skill | Następny krok |
+| Intent | Skill | Next step |
 | --- | --- | --- |
-| Zaimplementuj zmianę, bugfix albo refaktor bez istniejącego planu | `$code-implement` | implementacja, dowody i lekka weryfikacja |
+| Implement a change, bug fix or refactor without an existing plan | `$code-implement` | implementation, evidence and light verification |
 
-### Review kodu i planu
+### Code and plan review
 
-| Intencja | Skill | Następny krok |
+| Intent | Skill | Next step |
 | --- | --- | --- |
-| Wykonaj review kodu lub aktualnych zmian albo odrębną fazę read-only review planu | `$code-review` | findings-first, coverage i werdykt przed merge lub wdrożeniem planu |
-| Szybko sprawdź przyrost w trakcie realizacji zadania albo jawnie wybierz quick-check | `$review-quick` | raport findings-first bez formalnego werdyktu |
-| Zleć z OpenCode odczytowy review kodu Claude Code (Opus) przez Paseo | `$claude-review` | raport recenzenta oceniany bramką `$code-review` |
+| Review code or current changes, or run a separate read-only plan review | `$code-review` | findings first, coverage and a verdict before merge or plan execution |
+| Quickly check an increment during a task, or explicitly choose a quick check | `$review-quick` | findings-first report without a formal verdict |
+| Delegate a read-only code review from OpenCode to Claude Code (Opus) through Paseo | `$claude-review` | reviewer report evaluated by the `$code-review` gate |
 
-### Review instrukcji
+### Instruction review
 
-| Intencja | Skill | Następny krok |
+| Intent | Skill | Next step |
 | --- | --- | --- |
-| Zaudytuj skill, reguły lokalne, agenta albo cały katalog względem standardu autorskiego | `$skill-review` | findings albo standard-gap z evidence, bez edycji plików |
-| Uporządkuj lokalne reguły i usuń duplikaty względem baseline `_shared` | `$rules-sync` | zsynchronizowane zasady z jawnie zaraportowanymi nadpisaniami |
+| Audit a skill, local rules, an agent or a whole directory against the authoring standard | `$skill-review` | findings or standard gaps with evidence, no file edits |
+| Clean up local rules and remove duplicates of the `_shared` baseline | `$rules-sync` | synchronized rules with overrides reported explicitly |
 
-### QA i commit
+### QA and commit
 
-| Intencja | Skill | Następny krok |
+| Intent | Skill | Next step |
 | --- | --- | --- |
-| Uruchom deterministyczne QA z macierzy komend: linty, testy i review | `$qa-run` | raport QA i sesja QA |
-| Zacommituj zmiany zgodnie z workflow repo | `$git-commit` | pełna procedura testów, walidacji i commit |
-| Przygotuj samą treść commit message | `$commit-message-write` | zapis do `COMMIT_MESSAGE_DIR/commit-message.txt` |
+| Run deterministic QA from the command matrix: linters, tests and review | `$qa-run` | QA report and QA session |
+| Commit changes following the repository workflow | `$git-commit` | full test, validation and commit procedure |
+| Prepare only the commit message | `$commit-message-write` | written to `COMMIT_MESSAGE_DIR/commit-message.txt` |
 
-### Dokumentacja
+### Documentation
 
-| Intencja | Skill | Następny krok |
+| Intent | Skill | Next step |
 | --- | --- | --- |
-| Uporządkuj dokumentację po większych zmianach | `$docs-sync` | scalone duplikaty i spójne odwołania |
-| Wypisz otwarte zadania TODO z dokumentacji | `$docs-todo` | lista zadań bez implementacji |
-| Odśwież indeks skilli: listę i tabelę triggerów | `$skills-index-refresh` | `SKILLS_INDEX_DOC` zgodny z katalogiem |
+| Tidy up documentation after larger changes | `$docs-sync` | merged duplicates and consistent references |
+| List open TODO items from the documentation | `$docs-todo` | task list without implementation |
+| Refresh the skills index: list and trigger table | `$skills-index-refresh` | `SKILLS_INDEX_DOC` matches the skills directory |
 
-### Obsługa issue
+### Issue handling
 
-| Intencja | Skill | Następny krok |
+| Intent | Skill | Next step |
 | --- | --- | --- |
-| Rozpocznij pracę nad issue | `$gh-issue-start` | branch, status In progress i assignee |
-| Odeślij issue do review | `$gh-issue-review` | push, PR, status In review i opcjonalny reviewer |
-| Ustaw status issue w GitHub Projects v2 | `$gh-issue-status-set` | zaktualizowany status na podstawie brancha albo numeru issue |
+| Start work on an issue | `$gh-issue-start` | branch, In progress status and assignee |
+| Send an issue to review | `$gh-issue-review` | push, PR, In review status and optional reviewer |
+| Set an issue status in GitHub Projects v2 | `$gh-issue-status-set` | status updated from the branch or issue number |
 
-### Diagnostyka i utrzymanie
+### Diagnostics and maintenance
 
-| Intencja | Skill | Następny krok |
+| Intent | Skill | Next step |
 | --- | --- | --- |
-| Załaduj albo odśwież kontekst projektu | `$context-refresh` | manifest kontekstu i stan repo |
-| Przekaż kontekst kolejnemu agentowi | `$handoff-refresh` | zrzut stanu dla nowej sesji |
-| Wyczyść lokalny cache agenta | `$agent-cache-clear` | usunięcie stanu z `CACHE_PATH` |
+| Load or refresh the project context | `$context-refresh` | context manifest and repository state |
+| Hand the context over to the next agent | `$handoff-refresh` | state snapshot for a new session |
+| Clear the local agent cache | `$agent-cache-clear` | state removed from `CACHE_PATH` |
 
-### Zarządzanie skillami i wydaniem
+### Skills and release management
 
-| Intencja | Skill | Następny krok |
+| Intent | Skill | Next step |
 | --- | --- | --- |
-| Synchronizuj, publikuj albo zmień wybór skilli z repozytorium źródłowego | `$llm-skills-manager` | sync/publish przez CLI lub API z kontrolą planu |
-| Przygotuj i wydaj nową wersję pakietu npm | `$npm-release-manager` | GitHub Release i Trusted Publishing |
+| Sync, publish or change the selection of skills from the source repository | `$llm-skills-manager` | sync/publish through the CLI or API with plan review |
+| Prepare and release a new npm package version | `$npm-release-manager` | GitHub Release and Trusted Publishing |
 
-## Lista skilli
+## Skill list
 
 - `$agent-cache-clear`
 - `$claude-review`

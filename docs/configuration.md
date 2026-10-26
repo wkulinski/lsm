@@ -1,8 +1,8 @@
 # Configuration reference
 
-This page describes every file LSM reads or writes and every option it accepts.
-For day-to-day tasks see [Usage](usage.md); for error messages and recovery see
-[Troubleshooting](troubleshooting.md).
+The files LSM reads and writes and the fields they accept. Command options are
+listed by `lsm <command> --help`. For day-to-day tasks see [Usage](usage.md);
+for error messages and recovery see [Troubleshooting](troubleshooting.md).
 
 ## Files
 
@@ -54,14 +54,12 @@ LSM creates an empty one and carries on; run `lsm sync --update` to fill it.
 | `sources[].source` | yes | Where to read from. See [Sources](#sources). |
 | `sources[].skills` | no | Which skills to install. See [Selection](#selection). |
 | `sources[].subagents` | no | Which OpenCode subagents to install. See [Selection](#selection). |
-| `sources[].publish` | no | Optional publish defaults for this source. |
+| `sources[].publish` | no | Publish defaults for this source. |
 | `sources[].publish.branchPrefix` | no | Non-empty string used as the branch name prefix. Default: `skills-sync/publish`. |
 | `sources[].publish.createPr` | no | Boolean. Default: `true`. `--no-pr` overrides it for one run. |
 
-At least one of `agents` or `subagents` must be non-empty.
-
-Two options from older manifests are rejected with an explicit error:
-`copies` (use `shared_files` in the skill instead) and `publish.includeNewByDefault`.
+At least one of `agents` or `subagents` must be non-empty. Removed fields such
+as `copies` are rejected; see [Upgrading older files](#upgrading-older-files).
 
 ### Selection
 
@@ -77,9 +75,6 @@ An explicit list is matched against the skill name from its frontmatter, or its
 directory name. Matching ignores case. If a requested name is not found in the
 source, the run stops with `Requested skills were not found in the source;
 synchronization was not applied.` and changes nothing.
-
-If you upgrade an older manifest by hand: a missing `skills` field used to mean
-"all". It now means "none", so add `"skills": true` where you relied on that.
 
 ### Sources
 
@@ -152,6 +147,7 @@ installs a single copy.
 | `universal` | `.agents/skills` |
 | `windsurf` | `.windsurf/skills` |
 | `zencoder` | `.zencoder/skills` |
+
 Skills from a source keep their path below the source's `skills` directory. A
 skill at `skills/hello-lsm` in the source is installed to
 `<skills directory>/hello-lsm` for every selected agent.
@@ -209,8 +205,9 @@ same shared path, `sync` stops with an ownership conflict.
 ## Subagents
 
 Subagents are OpenCode agent definitions, synchronized by `sync` when the
-manifest contains `"subagents": ["opencode"]`. They are **sync-only**:
-`publish` does not handle them.
+manifest contains `"subagents": ["opencode"]`. They are **sync-only**: a
+manifest that contains only subagents fails `publish` with `Publish currently
+supports skills only; subagents are sync-only.`
 
 - A source may contain `.opencode/agent/`, `.opencode/agents/` or both. Files
   are installed into the directory your project already uses, or
@@ -226,8 +223,6 @@ manifest contains `"subagents": ["opencode"]`. They are **sync-only**:
     - .agents/skills/_shared/references/runtime-quality-procedures.md
   ```
 
-- A manifest with only subagents can use `"agents": []`.
-
 ## Plugins
 
 OpenCode plugins are synchronized together with subagents (same
@@ -236,23 +231,10 @@ OpenCode plugins are synchronized together with subagents (same
 - There is no per-plugin selection. For every source, all regular files under
   `.opencode/plugins/` are copied recursively, with the same relative paths.
   Source-level `subagents` selection does not limit plugins.
-- A source without that directory simply contributes no plugins.
 - Symbolic links and paths that leave the source directory are rejected.
 - LSM does not install npm dependencies for plugins.
 - A plugin that is no longer in the source is removed only during a successful
   `sync --update`. Files LSM does not manage are never removed.
-
-## What each artifact supports
-
-| Artifact | Selected by | `sync` | `publish` |
-|---|---|---|---|
-| Skill | `agents` and `sources[].skills` | yes | yes |
-| Shared file | `shared_files` in a skill | yes | yes, together with its skill |
-| Subagent (OpenCode) | `subagents` and `sources[].subagents` | yes | no |
-| Plugin (OpenCode) | `subagents` | yes, all files | no |
-
-A manifest that contains only subagents fails `publish` with `Publish currently
-supports skills only; subagents are sync-only.`
 
 ## Lock file (`skills.lock.json`)
 
@@ -275,5 +257,16 @@ manifest that uses subagents requires version 6, which `sync --update` writes
 after a successful run. Any other `schemaVersion` fails with
 `unsupported schemaVersion=…; expected 5 or 6`.
 
-Hashes let LSM detect local edits to managed files. They do not prove that the
-content is safe: see [Trust](usage.md#trust-the-sources-you-sync).
+Hashes let LSM detect local edits to managed files.
+
+## Upgrading older files
+
+LSM does not migrate files automatically; update them by hand:
+
+| Change | What to do |
+|---|---|
+| Manifest `schemaVersion` must be `2`. | Set `"schemaVersion": 2` and review selections. |
+| A missing `skills` or `subagents` field means *none*, not *all*. | Add an explicit `true` where you relied on "all". |
+| `copies` is no longer supported. | Declare `shared_files` in the skill's frontmatter. |
+| `publish.includeNewByDefault` is no longer supported. | Remove it; select new skills with `lsm publish --new-skill`. |
+| Lock version 5 is read, version 6 is written. | Run `lsm sync --update`; a manifest with subagents requires it. |
