@@ -163,6 +163,31 @@ describe('SkillInstaller.writeDirectory', () => {
         }
     });
 
+    test('retries from inside the skills directory when its parent is on another volume', () => {
+        const { root, skillsDir, targetDir } = createLayout();
+        const parentWorkDirPrefix = path.join(root, '.agents', '.lsm-swap-');
+
+        try {
+            const originalRename = fs.renameSync;
+            vi.spyOn(fs, 'renameSync').mockImplementation(((from: fs.PathLike, to: fs.PathLike) => {
+                if (String(from).startsWith(parentWorkDirPrefix) || String(to).startsWith(parentWorkDirPrefix)) {
+                    throw Object.assign(new Error('EXDEV: cross-device link not permitted'), { code: 'EXDEV' });
+                }
+                originalRename(from, to);
+            }) as typeof fs.renameSync);
+
+            SkillInstaller.writeDirectory(targetDir, newFiles(), skillsDir);
+
+            expect(fs.readFileSync(path.join(targetDir, 'SKILL.md'), 'utf8')).toBe('# New\n');
+            expect(fs.existsSync(path.join(targetDir, 'old-only.txt'))).toBe(false);
+            expect(fs.readdirSync(skillsDir)).toEqual(['example']);
+            expect(listWorkDirs(root)).toEqual([]);
+        }
+        finally {
+            fs.rmSync(root, { recursive: true, force: true });
+        }
+    });
+
     test('preserves the previous version and reports its location when restoring fails', () => {
         const { root, skillsDir, targetDir } = createLayout();
 

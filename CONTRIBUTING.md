@@ -29,8 +29,8 @@ reason.
 
 ## Setting up
 
-Develop on Node.js 22 or newer (what CI uses) with `git`. The packaged CLI
-itself supports Node.js 20 and newer.
+Develop on Node.js 22.13 or newer (what CI uses and what the lint tooling
+requires) with `git`. The packaged CLI itself supports Node.js 20 and newer.
 
 ```bash
 git clone https://github.com/wkulinski/lsm.git

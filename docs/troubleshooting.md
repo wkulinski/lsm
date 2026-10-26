@@ -142,10 +142,10 @@ What it does not guarantee:
 If the previous version could not be restored, the error names the directory
 where it was preserved. Its name starts with `.lsm-swap-` and it sits next to
 your skills directory (for example `.agents/.lsm-swap-…`), or inside it when the
-parent directory is not writable. Copy the content back by hand, then delete
-the temporary directory. LSM ignores directories with that name when it looks
-for skills, so a leftover is harmless, but an agent that scans the skills
-directory itself may still read a copy kept inside it.
+parent directory is not writable or is on another volume. Copy the content
+back by hand, then delete the temporary directory. LSM ignores directories with
+that name when it looks for skills, so a leftover is harmless, but an agent that
+scans the skills directory itself may still read a copy kept inside it.
 
 Fix the cause (free disk space, permissions), then run the same command again.
 `Aborting before removals because shared file sync failed.` and `…subagent

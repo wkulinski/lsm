@@ -19,7 +19,6 @@ const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url))
 const exampleDir = path.join(repositoryRoot, 'examples');
 const exampleSourceUrl = 'https://github.com/wkulinski/lsm/tree/master/examples/skill-source';
 const exampleRepositoryUrl = 'https://github.com/wkulinski/lsm.git';
-const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 
 function run(command, args, options = {}) {
     const result = spawnSync(command, args, { encoding: 'utf8', ...options });
@@ -35,6 +34,15 @@ function runChecked(command, args, options = {}) {
     return result;
 }
 
+// Node refuses to spawn npm.cmd without a shell on Windows, so npm's own entry point runs there instead.
+function npm(args, options = {}) {
+    if (process.platform !== 'win32') {
+        return runChecked('npm', args, options);
+    }
+    const npmCli = path.join(path.dirname(process.execPath), 'node_modules', 'npm', 'bin', 'npm-cli.js');
+    return runChecked(process.execPath, [npmCli, ...args], options);
+}
+
 function git(cwd, args) {
     return runChecked('git', args, { cwd }).stdout.trim();
 }
@@ -44,7 +52,7 @@ function step(message) {
 }
 
 function packArchive(destination) {
-    const result = runChecked(npmCommand, ['pack', '--json', '--pack-destination', destination], { cwd: repositoryRoot });
+    const result = npm(['pack', '--json', '--pack-destination', destination], { cwd: repositoryRoot });
     const [entry] = JSON.parse(result.stdout);
     return path.join(destination, entry.filename);
 }
@@ -154,7 +162,7 @@ function main() {
         const projectDir = path.join(workDir, 'project');
         fs.mkdirSync(projectDir);
         fs.writeFileSync(path.join(projectDir, 'package.json'), '{"name":"lsm-package-smoke","private":true}\n');
-        runChecked(npmCommand, [
+        npm([
             'install', '--ignore-scripts', '--no-audit', '--no-fund', '--package-lock=false', archive,
         ], { cwd: projectDir });
 
