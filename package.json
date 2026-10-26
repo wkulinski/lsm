@@ -1,7 +1,7 @@
 {
     "name": "@wkulinski/lsm",
     "type": "module",
-    "version": "0.5.2",
+    "version": "0.5.3",
     "description": "Declarative manager for AI agent skills: sync them from Git sources, pin them in a lockfile and publish improvements back.",
     "author": "Wojciech Kuliński",
     "license": "MIT",
