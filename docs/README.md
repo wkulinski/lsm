@@ -1,14 +1,6 @@
 # Documentation
 
-## For users
-
-| Page | Purpose |
-|---|---|
-| [Project README](../README.md) | What LSM is, quick start, safety overview. |
-| [Usage guide](usage.md) | Tasks: set up, update, resolve local edits, publish. |
-| [Configuration reference](configuration.md) | Manifest, lock, sources, agents, writing skills. |
-| [Troubleshooting](troubleshooting.md) | Error messages and safe next steps. |
-| [Example source](../examples/README.md) | The demo skill used in the quick start. |
+User documentation is listed in the [project README](../README.md#documentation).
 
 ## For maintainers
 
@@ -19,6 +11,7 @@
 | [Security policy](../SECURITY.md) | Private vulnerability reporting. |
 | [Module documentation](modules/README.md) | Architecture and invariants of the runtime. |
 | [Agent rules](../AGENTS.md) | Repository layout, commands and conventions. |
+| [Skills index](SKILLS.md) | Project-local agent skills and when to use them. |
 
 The `tmp/`, `plans/` and `drafts/` directories are reserved for local notes and
 are ignored by Git.

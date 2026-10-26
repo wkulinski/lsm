@@ -1,11 +1,9 @@
 # Usage guide
 
-Task-oriented instructions for working with LSM. Option and file formats are in
-the [Configuration reference](configuration.md); error messages and recovery
-steps are in [Troubleshooting](troubleshooting.md).
-
-All commands below use the installed `lsm` command. Run `lsm --help`,
-`lsm sync --help` or `lsm publish --help` for the built-in option list.
+Task-oriented instructions for working with LSM. File formats are in the
+[Configuration reference](configuration.md); error messages and recovery steps
+are in [Troubleshooting](troubleshooting.md). Run `lsm sync --help` or
+`lsm publish --help` for the full option list.
 
 ## Requirements
 
@@ -31,22 +29,9 @@ Exit code `0` means success, `1` means the run failed or was stopped.
 ## Set up for yourself
 
 1. Write `skills.json` (or run `lsm sync` once to create a template and fill it
-   in). A minimal manifest that installs the demo skill from this repository:
-
-   ```json
-   {
-       "schemaVersion": 2,
-       "agents": ["codex"],
-       "sources": [
-           {
-               "source": "https://github.com/wkulinski/lsm/tree/master/examples/skill-source",
-               "skills": ["hello-lsm"]
-           }
-       ]
-   }
-   ```
-
-   The same file is available as [`examples/skills.json`](../examples/skills.json).
+   in). [`examples/skills.json`](../examples/skills.json) is a minimal working
+   manifest that installs the demo skill; every field is described in the
+   [Configuration reference](configuration.md#manifest-skillsjson-schema-version-2).
 
 2. Install and create the lock:
 
@@ -70,10 +55,15 @@ Commit `skills.json` and `skills.lock.json` to the project repository.
   commits and files recorded in the lock, regardless of what upstream has done
   since.
 - **Update deliberately:** one person runs `lsm sync --update`, reviews the
-  changes to the installed files and to `skills.lock.json`, and commits them
-  together. Others pick the update up with `git pull` followed by `lsm sync`.
+  installed files and lock, and commits the lock together with any tracked
+  skill files. Others pull the changes and run `lsm sync`.
 - **Review the lock like code.** A changed `resolvedCommit` or hash means the
   instructions your agents read have changed.
+
+If installed directories are not versioned, pulling a new lock can make their
+older contents look like local edits and stop `sync`. Review these
+[conflicts](#local-edits-and-conflicts) before confirming or using `--force`,
+and save any real edits first.
 
 ## Change what is installed
 
@@ -122,7 +112,7 @@ What happens next depends on how you run it:
   continue because local changes were detected in managed files.`
 - **With `--force`:** LSM prints the conflicts and continues. Your local
   changes in those paths are overwritten or deleted and cannot be recovered
-  from LSM. Review the list first, and commit or copy anything you want to keep.
+  from LSM, so commit or copy anything you want to keep first.
 
 Safe ways to resolve a conflict, in order of preference:
 
@@ -130,8 +120,8 @@ Safe ways to resolve a conflict, in order of preference:
    it to the source, merge it there, then run `lsm sync --update`.
 2. **The change is already upstream:** run `lsm sync --update`, which takes the
    current upstream and refreshes the lock.
-3. **Discard your change:** copy what you need elsewhere, then run
-   `lsm sync --force`.
+3. **Keep it privately or discard it:** copy what you want to keep under
+   another skill name, then run `lsm sync --force`.
 
 ## Unmanaged files
 
@@ -143,9 +133,8 @@ created in other places are never touched. Two cases need care:
   (`--force` or answering `y`) replaces the directory, removing the extra file.
 - **At a path LSM wants to use.** If a directory such as
   `.agents/skills/hello-lsm/` already exists and is not managed, the run stops
-  with `existing unmanaged path would be overwritten`. With `--force` the
-  directory is replaced and its previous contents are lost. Move it away first
-  if it matters.
+  with `existing unmanaged path would be overwritten`. `--force` replaces the
+  directory, so move it away first if it matters.
 
 Put your own skills in a differently named directory, or [publish
 them](#publish-your-changes-to-the-source) to a source you manage.
@@ -209,33 +198,7 @@ Rules to know:
 - After the PR is merged, run `lsm sync --update` so that your lock and the
   source agree.
 
-LSM never reads or stores your credentials. Cloning and pushing use your Git
-setup, and the pull request uses your `gh` login.
-
-## Trust the sources you sync
-
-Skills, subagents and plugins are instructions and code that your agents will
-follow or run. The lock makes an install **reproducible**: it pins commits and
-detects local edits. It does **not** make the content **safe**: it cannot tell
-whether a pinned instruction is harmless or whether an update contains
-something you do not want.
-
-- Sync only from repositories you trust, and prefer pinning a ref you control.
-- Review the diff of installed files and the lock before committing an update.
-- Treat plugins (executable code) with the same care as any dependency.
-
-## Library use
-
-The same operations are available programmatically:
-
-```ts
-import { createManager } from '@wkulinski/lsm';
-
-const manager = createManager({ cwd: process.cwd() });
-const result = await manager.runSync({ update: true });
-```
-
-`createManager` also accepts `manifestPath` and `lockPath`.
+Pushing uses your Git credentials and the pull request uses your `gh` login.
 
 ## Colors
 

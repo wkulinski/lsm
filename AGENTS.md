@@ -13,8 +13,10 @@ changes scoped to the package, its CLI, tests, and project documentation.
 - `bin/lsm.mjs`: repository CLI wrapper.
 - `.agents/skills/`: local agent skills; most installed skills are ignored by
   Git and should not be treated as package source.
-- `README.md`: package documentation and user-facing configuration reference.
-- `docs/`: tracked supporting documentation.
+- `README.md`: package overview, quick start and links to the user and
+  maintainer documentation.
+- `docs/`: user guides, configuration reference, troubleshooting, maintainer
+  and module documentation.
 - `var/`: local agent cache and state; ignored by Git.
 
 ## Development Commands

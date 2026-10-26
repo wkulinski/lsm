@@ -9,25 +9,15 @@ start with [CONTRIBUTING.md](../CONTRIBUTING.md).
 |---|---|
 | Node.js | `engines` declares `>=20`. This is kept; raising it is a deliberate, announced change. |
 | Verified environment | CI installs the packaged archive and checks it on Ubuntu with Node.js 20.0.0, 22 and 24. |
-| Other systems | macOS, Windows and other Linux distributions are **unverified**, not known to be broken. |
+| Other systems | macOS, Windows and other Linux distributions are **unverified**, not known to be broken. Reports and fixes are welcome. |
 | Versioning | The package is on `0.x`. Commands and file formats may change between minor versions. |
 | Support | Only the latest release gets fixes. There are no parallel maintenance lines and no response-time commitments. |
 
 ### Breaking changes before 1.0
 
 A change that requires users to edit their files or alter their workflow must be
-named in the release notes, with the exact migration steps. There is no
-automatic migration today; all migrations are manual.
-
-Migrations that exist now:
-
-| Change | What to do |
-|---|---|
-| Manifest `schemaVersion` must be `2`. | Set `"schemaVersion": 2` and review selections. |
-| A missing `skills` or `subagents` field means *none*, not *all*. | Add an explicit `true` where you relied on "all". |
-| `copies` is no longer supported. | Declare `shared_files` in the skill's frontmatter. |
-| `publish.includeNewByDefault` is no longer supported. | Remove it; select new skills with `--new-skill`. |
-| Lock version 5 is read, version 6 is written. | Run `lsm sync --update`; a manifest with subagents requires it. |
+named in the release notes, with the exact migration steps, and added to
+[Upgrading older files](configuration.md#upgrading-older-files).
 
 Do not add behavior that silently reinterprets existing files. Fail with an
 explicit message instead.
@@ -35,16 +25,14 @@ explicit message instead.
 ## Before merging
 
 Run the checks listed in [CONTRIBUTING.md](../CONTRIBUTING.md#checks-to-run).
-CI runs them on pull requests and on pushes to `main`, `master` and `dev`. At
-the time of writing the repository has no branch protection or rulesets, so
-nothing enforces these checks remotely: confirm they passed before merging.
+CI runs them on pull requests and on pushes to `main`, `master` and `dev`;
+confirm they passed before merging.
 
 ## Releasing
 
 Releases are published from GitHub Releases through
 `.github/workflows/publish.yml`. The npm Trusted Publisher must point at that
-workflow. Publishing is irreversible for a given version, so finish the
-preparation first.
+workflow.
 
 1. **Prepare.** Start from an up-to-date default branch with all intended
    changes merged. Run every check in
@@ -62,12 +50,10 @@ preparation first.
    ```
 
    Do not mark it as a pre-release; the workflow skips pre-releases.
-5. **What the workflow does.** It verifies tag and version, installs
-   dependencies, runs tests, coverage, typecheck, lint, build and the production
-   dependency audit, then packs **one** archive and records its SHA-256. That
-   archive is installed and checked on Node.js 20.0.0, 22 and 24. Only if all
-   pass does the publish job re-check the checksum and `npm publish` the same
-   file. Nothing is rebuilt between the check and the publish.
+5. **What the workflow does.** It packs **one** archive, records its SHA-256,
+   and checks it on the Node.js versions listed above. Only after all checks
+   pass does it verify the checksum again and publish the same archive, without
+   rebuilding.
 6. **After publishing.** Confirm `npm view @wkulinski/lsm version`, and run the
    README quick start against the released version.
 
@@ -89,14 +75,7 @@ Generated comparisons are not enough. Each release should state:
 - Known gaps relevant to this release.
 
 ## Verification
-- Checks that passed (tests, package check on Node 20.0.0 / 22 / 24).
+- Checks that passed (tests, package check on the Node.js matrix).
 
 Full changelog: https://github.com/wkulinski/lsm/compare/vOLD...vNEW
 ```
-
-## Repository settings
-
-- Private vulnerability reporting is enabled; reports arrive as GitHub security
-  advisories and are described in [SECURITY.md](../SECURITY.md).
-- Keep the repository description, topics and npm keywords consistent with what
-  LSM does.
