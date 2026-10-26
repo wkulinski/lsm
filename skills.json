@@ -1,6 +1,6 @@
 {
     "schemaVersion": 2,
-    "agents": ["codex"],
+    "agents": ["codex", "claude-code"],
     "subagents": ["opencode"],
     "sources": [
         {

@@ -17,6 +17,7 @@ docs/HANDOFF.md
 !/.agents/skills/llm-skills-manager/**
 !/.agents/skills/npm-release-manager/
 !/.agents/skills/npm-release-manager/**
+/.claude/
 /docs/tmp/
 /.opencode/agents/
 /.opencode/plugins/

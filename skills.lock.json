@@ -1,7 +1,8 @@
 {
     "schemaVersion": 6,
-    "generatedAt": "2026-10-23T18:17:31.320Z",
+    "generatedAt": "2026-10-24T19:04:36.903Z",
     "agents": [
+        "claude-code",
         "codex"
     ],
     "subagents": [
@@ -10,7 +11,7 @@
     "sources": {
         "https://github.com/wkulinski/llm-skills": {
             "mode": "explicit",
-            "listedAt": "2026-10-23T18:17:27.315Z",
+            "listedAt": "2026-10-24T19:04:32.397Z",
             "skillEntries": [
                 {
                     "name": "agent-cache-clear",
@@ -1553,9 +1554,9 @@
                 "requestedRef": null,
                 "defaultBranch": "master",
                 "resolvedRef": "master",
-                "resolvedCommit": "a54541e63daeccf603f4a83819d9979b7d1df21e",
+                "resolvedCommit": "7c67e650143cb749a9b33289550ebc37dfa0d9c7",
                 "subpath": null,
-                "resolvedAt": "2026-10-23T18:17:27.306Z"
+                "resolvedAt": "2026-10-24T19:04:32.379Z"
             }
         }
     }

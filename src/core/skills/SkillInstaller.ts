@@ -24,9 +24,23 @@ export default class SkillInstaller {
         const workDir = SkillInstaller.createWorkDirectory(resolvedBoundaryDir);
 
         try {
+            SkillInstaller.installThrough(workDir, resolvedTargetDir, stagedFiles);
+        }
+        catch (error) {
+            // The skills directory is on another volume than its parent (for example a mount point),
+            // so the swap cannot rename across them. Nothing was moved; retry from inside it.
+            if (!SkillInstaller.isCrossDeviceError(error) || path.dirname(workDir) === resolvedBoundaryDir) {
+                throw error;
+            }
+            SkillInstaller.installThrough(SkillInstaller.createWorkDirectoryIn(resolvedBoundaryDir), resolvedTargetDir, stagedFiles);
+        }
+    }
+
+    private static installThrough(workDir: string, targetDir: string, files: SkillInstallerFileEntry[]): void {
+        try {
             const preparedDir = path.join(workDir, 'new');
-            SkillInstaller.prepareDirectory(preparedDir, stagedFiles);
-            SkillInstaller.replaceDirectory(resolvedTargetDir, preparedDir, path.join(workDir, 'previous'));
+            SkillInstaller.prepareDirectory(preparedDir, files);
+            SkillInstaller.replaceDirectory(targetDir, preparedDir, path.join(workDir, 'previous'));
         }
         catch (error) {
             if (fs.existsSync(path.join(workDir, 'previous'))) {
@@ -40,19 +54,25 @@ export default class SkillInstaller {
         SkillInstaller.removeQuietly(workDir);
     }
 
-    // The work directory lives next to the skills directory: on the same volume and outside every
-    // directory that agents or local discovery read skills from. When that parent is not writable,
+    // The work directory lives next to the skills directory: outside every directory that agents or
+    // local discovery read skills from. When that parent is not writable, or is on another volume,
     // it falls back to a prefixed directory inside the skills directory, which scanners skip.
     private static createWorkDirectory(skillsDir: string): string {
-        const parentDir = path.dirname(skillsDir);
         try {
-            fs.mkdirSync(parentDir, { recursive: true });
-            return fs.mkdtempSync(path.join(parentDir, SWAP_DIRECTORY_PREFIX));
+            return SkillInstaller.createWorkDirectoryIn(path.dirname(skillsDir));
         }
         catch {
-            fs.mkdirSync(skillsDir, { recursive: true });
-            return fs.mkdtempSync(path.join(skillsDir, SWAP_DIRECTORY_PREFIX));
+            return SkillInstaller.createWorkDirectoryIn(skillsDir);
         }
+    }
+
+    private static createWorkDirectoryIn(baseDir: string): string {
+        fs.mkdirSync(baseDir, { recursive: true });
+        return fs.mkdtempSync(path.join(baseDir, SWAP_DIRECTORY_PREFIX));
+    }
+
+    private static isCrossDeviceError(error: unknown): boolean {
+        return (error as NodeJS.ErrnoException | undefined)?.code === 'EXDEV';
     }
 
     private static validateFiles(targetDir: string, files: SkillInstallerFileEntry[]): SkillInstallerFileEntry[] {
